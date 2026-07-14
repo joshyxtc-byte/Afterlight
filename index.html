@@ -1,0 +1,1306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Afterlight · archive</title>
+
+    <!-- mammoth.js for .docx parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js">
+    </script>
+
+    <style>
+        /* ── Reset & Base ── */
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg: #000000;
+            --bg-card: #0a0a0a;
+            --bg-hover: #141414;
+            --border: #1f1f1f;
+            --text: #e8e8e8;
+            --text-muted: #888888;
+            --accent: #88ccff;
+            --accent-dim: #447799;
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+            --radius: 16px;
+            --font: 'Georgia', 'Palatino', serif;
+            --transition: 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            background: var(--bg);
+        }
+
+        body {
+            color: var(--text);
+            font-family: var(--font);
+            min-height: 100vh;
+            padding: 2rem 1.5rem 2rem;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ── Particle Canvas ── */
+        #particles-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ── Scrollbar ── */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--accent-dim);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent);
+        }
+
+        /* ── Header ── */
+        header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+            padding-top: 0.5rem;
+        }
+
+        header h1 {
+            font-size: 3.2rem;
+            font-weight: 400;
+            letter-spacing: 0.06em;
+            color: var(--text);
+            text-shadow: 0 0 80px rgba(136, 204, 255, 0.15);
+        }
+
+        header .tagline {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            margin-top: 0.2rem;
+            letter-spacing: 0.04em;
+            opacity: 0.8;
+        }
+
+        header .tagline .spiral {
+            font-size: 1.2rem;
+            vertical-align: middle;
+        }
+
+        /* ── Tabs ── */
+        .tabs {
+            display: flex;
+            gap: 2rem;
+            justify-content: center;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.6rem;
+        }
+
+        .tabs button {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            font-family: var(--font);
+            padding: 0.4rem 1.2rem;
+            cursor: pointer;
+            transition: var(--transition);
+            letter-spacing: 0.04em;
+            border-radius: 30px;
+        }
+
+        .tabs button:hover {
+            color: var(--text);
+            background: var(--bg-card);
+        }
+
+        .tabs button.active {
+            color: var(--text);
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+        }
+
+        /* ── Loading state ── */
+        .loading-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--text-muted);
+            grid-column: 1 / -1;
+        }
+
+        .loading-state .spinner {
+            display: inline-block;
+            animation: spin 2s linear infinite;
+            font-size: 2rem;
+            opacity: 0.5;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* ── Card Grid ── */
+        .grid-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 1.2rem;
+        }
+
+        .grid-header h2 {
+            font-weight: 400;
+            font-size: 1.1rem;
+            letter-spacing: 0.04em;
+            color: var(--text-muted);
+        }
+
+        .grid-header .count {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            opacity: 0.6;
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2.5rem;
+            flex: 1;
+        }
+
+        /* ── Individual Card ── */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.4rem 1.2rem;
+            transition: var(--transition);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            min-height: 160px;
+            position: relative;
+            animation: fadeIn 0.6s ease forwards;
+            opacity: 0;
+        }
+
+        .card:hover {
+            border-color: var(--accent-dim);
+            background: var(--bg-hover);
+            box-shadow: 0 0 40px rgba(136, 204, 255, 0.03);
+            transform: translateY(-4px);
+        }
+
+        .card .title {
+            font-size: 1.2rem;
+            font-weight: 500;
+            color: var(--text);
+            margin-bottom: 0.2rem;
+            letter-spacing: 0.02em;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.4rem;
+        }
+
+        .card .meta {
+            display: flex;
+            gap: 0.8rem;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-bottom: 0.6rem;
+            margin-top: 0.2rem;
+            opacity: 0.6;
+        }
+
+        .card .summary {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+            margin-bottom: 0.2rem;
+            font-style: italic;
+            border-left: 2px solid var(--accent-dim);
+            padding-left: 0.6rem;
+        }
+
+        .card .summary .badge {
+            display: inline-block;
+            background: var(--accent-dim);
+            color: var(--bg);
+            font-size: 0.55rem;
+            padding: 0.05rem 0.5rem;
+            border-radius: 20px;
+            margin-right: 0.4rem;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            vertical-align: middle;
+            opacity: 0.8;
+        }
+
+        .card .body {
+            display: none;
+        }
+
+        /* ── Empty state ── */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--text-muted);
+            grid-column: 1 / -1;
+        }
+
+        .empty-state .big-icon {
+            font-size: 2.8rem;
+            display: block;
+            margin-bottom: 0.6rem;
+            opacity: 0.4;
+        }
+
+        .empty-state h3 {
+            font-weight: 400;
+            font-size: 1.1rem;
+            color: var(--text);
+        }
+
+        /* ── Modal (Pop-up) ── */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.4s ease;
+            padding: 1.5rem;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            max-width: 680px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 2rem 2rem 1.5rem;
+            position: relative;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9), 0 0 80px rgba(136, 204, 255, 0.04);
+            animation: modalIn 0.4s ease;
+        }
+
+        .modal-content .close-btn {
+            position: absolute;
+            top: 0.8rem;
+            right: 1.2rem;
+            font-size: 1.8rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: var(--transition);
+            background: none;
+            border: none;
+            font-family: var(--font);
+        }
+
+        .modal-content .close-btn:hover {
+            color: var(--text);
+            transform: rotate(90deg);
+        }
+
+        .modal-content .modal-title {
+            font-size: 1.8rem;
+            font-weight: 500;
+            color: var(--text);
+            margin-bottom: 0.2rem;
+            padding-right: 2rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.4rem;
+        }
+
+        .modal-content .modal-meta {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 1.2rem;
+            margin-top: 0.2rem;
+            opacity: 0.6;
+        }
+
+        .modal-content .modal-body {
+            font-size: 1.05rem;
+            line-height: 1.9;
+            color: var(--text);
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            border-left: 2px solid var(--accent-dim);
+            padding-left: 1.2rem;
+            margin-bottom: 1.5rem;
+            max-height: 50vh;
+            overflow-y: auto;
+        }
+
+        .modal-content .modal-body .blank-line {
+            display: block;
+            height: 0.8rem;
+        }
+
+        .modal-content .modal-actions {
+            display: flex;
+            gap: 0.8rem;
+            border-top: 1px solid var(--border);
+            padding-top: 1rem;
+            flex-wrap: wrap;
+            align-items: center;
+            position: relative;
+        }
+
+        .modal-content .modal-actions button {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 0.4rem 1.2rem;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: var(--transition);
+            font-family: var(--font);
+            letter-spacing: 0.02em;
+        }
+
+        .modal-content .modal-actions button:hover {
+            border-color: var(--accent-dim);
+            color: var(--text);
+            background: rgba(136, 204, 255, 0.04);
+        }
+
+        .modal-content .modal-actions button.download {
+            border-color: var(--accent-dim);
+            color: var(--accent);
+        }
+
+        .modal-content .modal-actions button.download:hover {
+            background: rgba(136, 204, 255, 0.08);
+        }
+
+        .modal-content .modal-actions button.delete {
+            border-color: #4a2a2a;
+            color: #8a6a6a;
+        }
+
+        .modal-content .modal-actions button.delete:hover {
+            background: rgba(200, 80, 80, 0.06);
+            border-color: #7a4a4a;
+        }
+
+        /* ── Typewriter Thank You ── */
+        .thankyou-message {
+            position: absolute;
+            bottom: calc(100% + 12px);
+            left: 0;
+            right: 0;
+            background: var(--bg-card);
+            border: 1px solid var(--accent-dim);
+            border-radius: 12px;
+            padding: 0.8rem 1.2rem;
+            font-size: 0.9rem;
+            color: var(--accent);
+            opacity: 0;
+            transform: translateY(8px);
+            transition: opacity 0.4s ease, transform 0.4s ease;
+            pointer-events: none;
+            font-style: italic;
+            min-height: 3rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+        }
+
+        .thankyou-message.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .thankyou-message .cursor {
+            display: inline-block;
+            width: 2px;
+            height: 1.1em;
+            background: var(--accent);
+            margin-left: 2px;
+            vertical-align: text-bottom;
+            animation: blink 0.8s step-end infinite;
+        }
+
+        @keyframes blink {
+            0%,
+            100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0;
+            }
+        }
+
+        /* ── Footer ── */
+        .footer {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            padding: 2rem 0 0.5rem;
+            border-top: 1px solid var(--border);
+            margin-top: 1rem;
+            opacity: 0.6;
+            letter-spacing: 0.04em;
+            line-height: 1.8;
+        }
+
+        .footer .signature {
+            font-style: italic;
+            color: var(--text-muted);
+            opacity: 0.8;
+        }
+
+        .footer .spiral {
+            font-size: 1rem;
+            vertical-align: middle;
+        }
+
+        /* ── Animations ── */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.96);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes modalIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .card:nth-child(1) {
+            animation-delay: 0.02s;
+        }
+        .card:nth-child(2) {
+            animation-delay: 0.06s;
+        }
+        .card:nth-child(3) {
+            animation-delay: 0.10s;
+        }
+        .card:nth-child(4) {
+            animation-delay: 0.14s;
+        }
+        .card:nth-child(5) {
+            animation-delay: 0.18s;
+        }
+        .card:nth-child(6) {
+            animation-delay: 0.22s;
+        }
+        .card:nth-child(7) {
+            animation-delay: 0.26s;
+        }
+        .card:nth-child(8) {
+            animation-delay: 0.30s;
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 600px) {
+            body {
+                padding: 1rem 0.8rem 1rem;
+            }
+
+            header h1 {
+                font-size: 2.4rem;
+            }
+
+            .card-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .tabs {
+                gap: 0.5rem;
+            }
+            .tabs button {
+                font-size: 0.9rem;
+                padding: 0.2rem 0.8rem;
+            }
+
+            .modal-content {
+                padding: 1.5rem 1.2rem;
+            }
+            .modal-content .modal-title {
+                font-size: 1.4rem;
+            }
+            .modal-content .modal-body {
+                font-size: 0.95rem;
+                padding-left: 0.8rem;
+            }
+
+            .thankyou-message {
+                font-size: 0.8rem;
+                padding: 0.6rem 1rem;
+                min-height: 2.5rem;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .modal-content .modal-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .modal-content .modal-actions button {
+                text-align: center;
+            }
+            .thankyou-message {
+                position: relative;
+                bottom: auto;
+                margin-bottom: 0.6rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ─── Particle Canvas ─── -->
+    <canvas id="particles-canvas"></canvas>
+
+    <div class="container">
+
+        <!-- ─── HEADER ─── -->
+        <header>
+            <h1>Afterlight</h1>
+            <div class="tagline">
+                <span class="spiral">🌀</span> The light that remains after everything else is gone
+            </div>
+        </header>
+
+        <!-- ─── TABS ─── -->
+        <div class="tabs">
+            <button class="active" data-tab="poems">Poems</button>
+            <button data-tab="stories">Stories</button>
+        </div>
+
+        <!-- ─── GRID ─── -->
+        <div class="grid-header">
+            <h2 id="gridTitle">📖 poems</h2>
+            <span class="count" id="itemCount">0</span>
+        </div>
+
+        <div class="card-grid" id="cardGrid">
+            <div class="loading-state">
+                <span class="spinner">🌀</span>
+                <p style="margin-top:0.6rem;opacity:0.5;">gathering from the void...</p>
+            </div>
+        </div>
+
+        <!-- ─── FOOTER ─── -->
+        <div class="footer">
+            <div>A collection of thoughts, experiences, and quiet devastation.</div>
+            <div class="signature">~ J C.</div>
+            <div style="margin-top:0.2rem;opacity:0.4;font-size:0.7rem;">
+                <span class="spiral">🌀</span> afterlight
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ─── MODAL ─── -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <button class="close-btn" id="modalCloseBtn">✕</button>
+            <div class="modal-title" id="modalTitle">Title</div>
+            <div class="modal-meta" id="modalMeta">📅 date · 📝 words</div>
+            <div class="modal-body" id="modalBody">Content</div>
+            <div class="modal-actions">
+                <button class="download" id="modalDownloadBtn">⬇ download .docx</button>
+                <button class="delete" id="modalDeleteBtn">✕ remove</button>
+                <div class="thankyou-message" id="thankyouMessage"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            'use strict';
+
+            // ─── DOM refs ───
+            const cardGrid = document.getElementById('cardGrid');
+            const itemCount = document.getElementById('itemCount');
+            const gridTitle = document.getElementById('gridTitle');
+            const tabs = document.querySelectorAll('.tabs button');
+
+            // Modal refs
+            const modal = document.getElementById('modal');
+            const modalCloseBtn = document.getElementById('modalCloseBtn');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalMeta = document.getElementById('modalMeta');
+            const modalBody = document.getElementById('modalBody');
+            const modalDownloadBtn = document.getElementById('modalDownloadBtn');
+            const modalDeleteBtn = document.getElementById('modalDeleteBtn');
+            const thankyouMessage = document.getElementById('thankyouMessage');
+
+            // ─── State ───
+            const STORAGE_KEY = 'afterlight_archive';
+            let archive = { poems: [], stories: [] };
+            let currentTab = 'poems';
+            let currentModalId = null;
+            let isLoading = false;
+            let typewriterTimer = null;
+
+            // ─── Load from localStorage or GitHub ───
+            async function loadArchive() {
+                // First try localStorage
+                try {
+                    const raw = localStorage.getItem(STORAGE_KEY);
+                    if (raw) {
+                        const parsed = JSON.parse(raw);
+                        if (parsed.poems && parsed.poems.length > 0) {
+                            archive = {
+                                poems: parsed.poems || [],
+                                stories: parsed.stories || []
+                            };
+                            archive.poems = archive.poems.filter(p => p && p.id && p.content && p.content.trim().length >
+                            0);
+                            archive.stories = archive.stories.filter(p => p && p.id && p.content && p.content.trim()
+                                .length > 0);
+                            render();
+                            return;
+                        }
+                    }
+                } catch (_) { /* ignore */ }
+
+                // If localStorage is empty, try loading from GitHub
+                await loadFromGitHub();
+            }
+
+            // ─── Load from GitHub API ───
+            async function loadFromGitHub() {
+                const grid = document.getElementById('cardGrid');
+                grid.innerHTML = `
+                    <div class="loading-state">
+                        <span class="spinner">🌀</span>
+                        <p style="margin-top:0.6rem;opacity:0.5;">listening to the dark...</p>
+                    </div>
+                `;
+
+                try {
+                    // Detect repo from the page URL (for GitHub Pages)
+                    let owner = 'your-username';
+                    let repo = 'your-repo';
+                    let branch = 'main';
+
+                    // Try to detect from the page URL
+                    const urlParts = window.location.hostname.split('.');
+                    if (urlParts.includes('github') || window.location.hostname.includes('github.io')) {
+                        // For GitHub Pages: username.github.io/repo-name
+                        const pathParts = window.location.pathname.split('/').filter(p => p.length > 0);
+                        if (pathParts.length > 0) {
+                            repo = pathParts[0];
+                            // Owner is the username part of the domain
+                            if (window.location.hostname.includes('github.io')) {
+                                owner = window.location.hostname.split('.')[0];
+                            }
+                        }
+                    }
+
+                    // Try to get repo info from the current page if it's a GitHub raw URL
+                    // Fallback: let the user configure via a global or query param
+                    // Check for a meta tag or global config
+                    const configEl = document.querySelector('meta[name="repo-config"]');
+                    if (configEl) {
+                        const config = JSON.parse(configEl.getAttribute('content'));
+                        owner = config.owner || owner;
+                        repo = config.repo || repo;
+                        branch = config.branch || branch;
+                    }
+
+                    // Also check for a global variable
+                    if (window.AFTERLIGHT_REPO) {
+                        owner = window.AFTERLIGHT_REPO.owner || owner;
+                        repo = window.AFTERLIGHT_REPO.repo || repo;
+                        branch = window.AFTERLIGHT_REPO.branch || branch;
+                    }
+
+                    // Try to fetch from GitHub API
+                    const apiUrl =
+                        `https://api.github.com/repos/${owner}/${repo}/contents/poems?ref=${branch}`;
+                    const response = await fetch(apiUrl, {
+                        headers: {
+                            'Accept': 'application/vnd.github.v3+json'
+                        }
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`GitHub API error: ${response.status}`);
+                    }
+
+                    const files = await response.json();
+
+                    // Filter for .docx files
+                    const docxFiles = files.filter(f =>
+                        f.name.toLowerCase().endsWith('.docx') &&
+                        f.type === 'file'
+                    );
+
+                    if (docxFiles.length === 0) {
+                        throw new Error('No .docx files found in poems/ folder');
+                    }
+
+                    // Fetch and parse each .docx file
+                    const poems = [];
+                    for (const file of docxFiles) {
+                        try {
+                            const docxResponse = await fetch(file.download_url);
+                            const arrayBuffer = await docxResponse.arrayBuffer();
+
+                            // Parse with mammoth
+                            const result = await mammoth.convertToHtml({ arrayBuffer });
+                            const plainText = htmlToPlainTextWithStructure(result.value);
+
+                            const lines = plainText.split('\n').filter(l => l.trim().length > 0);
+                            let title = lines.length > 0 ? lines[0].trim() : file.name.replace(/\.docx$/i, '');
+                            if (title.length > 80) title = title.slice(0, 80) + '…';
+
+                            const summary = generateSummary(plainText);
+
+                            // Get the raw file content for download
+                            const fileData = await fetch(file.download_url);
+                            const blob = await fileData.blob();
+                            const base64 = await blobToBase64(blob);
+
+                            poems.push({
+                                id: uid(),
+                                title: title,
+                                content: plainText,
+                                summary: summary,
+                                date: new Date().toISOString().slice(0, 10),
+                                fileName: file.name,
+                                fileData: base64,
+                            });
+                        } catch (err) {
+                            console.warn('Error parsing file:', file.name, err);
+                        }
+                    }
+
+                    // Separate into poems and stories based on folder or tags
+                    // For now, put all in poems
+                    archive = {
+                        poems: poems,
+                        stories: []
+                    };
+
+                    // Save to localStorage for offline use
+                    try {
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(archive));
+                    } catch (_) { /* ignore */ }
+
+                    render();
+
+                } catch (err) {
+                    console.warn('GitHub load error:', err);
+                    // Show empty state with option to retry
+                    const grid = document.getElementById('cardGrid');
+                    grid.innerHTML = `
+                        <div class="empty-state">
+                            <span class="big-icon">🌙</span>
+                            <h3>no poems found</h3>
+                            <p style="font-size:0.85rem;opacity:0.6;margin-top:0.4rem;">
+                                Place your .docx files in the <code>poems/</code> folder<br />
+                                or upload them manually.
+                            </p>
+                            <button onclick="location.reload()" style="
+                                margin-top:1rem;
+                                background:var(--bg-card);
+                                border:1px solid var(--border);
+                                color:var(--text-muted);
+                                padding:0.4rem 1.2rem;
+                                border-radius:30px;
+                                cursor:pointer;
+                                font-family:var(--font);
+                            ">retry</button>
+                        </div>
+                    `;
+                    itemCount.textContent = '0';
+                }
+            }
+
+            // ─── Blob to base64 ───
+            function blobToBase64(blob) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const dataUrl = e.target.result;
+                        const base64 = dataUrl.split(',')[1];
+                        resolve(base64);
+                    };
+                    reader.onerror = reject;
+                    reader.readAsDataURL(blob);
+                });
+            }
+
+            // ─── Helper: htmlToPlainTextWithStructure ───
+            function htmlToPlainTextWithStructure(html) {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const body = doc.body;
+
+                function extract(node) {
+                    let result = '';
+                    if (node.nodeType === Node.TEXT_NODE) {
+                        return node.textContent;
+                    }
+                    if (node.nodeType === Node.ELEMENT_NODE) {
+                        const tag = node.tagName.toLowerCase();
+                        const blockTags = ['p', 'div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'li', 'blockquote', 'pre'];
+                        let childrenText = '';
+                        for (const child of node.childNodes) {
+                            childrenText += extract(child);
+                        }
+                        if (tag === 'br') {
+                            return '\n';
+                        }
+                        if (blockTags.includes(tag)) {
+                            let trimmed = childrenText.trim();
+                            if (trimmed.length > 0) {
+                                return trimmed + '\n';
+                            } else {
+                                return '';
+                            }
+                        }
+                        return childrenText;
+                    }
+                    return '';
+                }
+
+                let fullText = extract(body);
+                // Preserve double line breaks for stanzas
+                fullText = fullText.replace(/\n{3,}/g, '\n\n');
+                return fullText.trim();
+            }
+
+            // ─── Simple AI summarizer ───
+            function generateSummary(text) {
+                if (!text || text.length < 20) return text || '';
+
+                const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
+                if (sentences.length <= 2) return text;
+
+                const stopwords = new Set([
+                    'a', 'an', 'the', 'of', 'and', 'to', 'for', 'with', 'on', 'at', 'from', 'by',
+                    'in', 'as', 'is', 'was', 'were', 'are', 'am', 'be', 'been', 'being', 'have',
+                    'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may',
+                    'might', 'must', 'shall', 'can', 'etc', 'i', 'you', 'he', 'she', 'it', 'we',
+                    'they', 'my', 'your', 'his', 'her', 'our', 'their', 'me', 'him', 'us', 'them'
+                ]);
+
+                const words = text.toLowerCase().match(/\b\w+\b/g) || [];
+                const freq = {};
+                for (const w of words) {
+                    if (!stopwords.has(w) && w.length > 2) {
+                        freq[w] = (freq[w] || 0) + 1;
+                    }
+                }
+
+                const scored = sentences.map(s => {
+                    const sWords = s.toLowerCase().match(/\b\w+\b/g) || [];
+                    let score = 0;
+                    for (const w of sWords) {
+                        if (freq[w]) score += freq[w];
+                    }
+                    if (sWords.length < 3) score *= 0.5;
+                    return { sentence: s.trim(), score };
+                });
+
+                scored.sort((a, b) => b.score - a.score);
+                let selected = [];
+                for (const s of scored) {
+                    if (selected.length >= 2) break;
+                    if (s.score === 0) continue;
+                    if (selected.length > 0 && selected[0].sentence === s.sentence) continue;
+                    selected.push(s);
+                }
+
+                if (selected.length === 0) {
+                    return sentences[0].trim();
+                }
+                return selected.map(s => s.sentence).join(' ');
+            }
+
+            // ─── uid ───
+            function uid() {
+                return Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 6);
+            }
+
+            // ─── Render ───
+            function render() {
+                const items = archive[currentTab] || [];
+                const title = currentTab === 'poems' ? '📖 poems' : '📚 stories';
+
+                gridTitle.textContent = title;
+                itemCount.textContent = items.length;
+
+                if (items.length === 0) {
+                    cardGrid.innerHTML = `
+                        <div class="empty-state">
+                            <span class="big-icon">🕯️</span>
+                            <h3>no ${currentTab} yet</h3>
+                            <p style="font-size:0.85rem;opacity:0.6;">place .docx files in the poems/ folder</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = '';
+                const sorted = [...items].reverse();
+                for (const p of sorted) {
+                    const titleText = p.title || 'untitled';
+                    const date = p.date || '—';
+                    const wordCount = p.content ? p.content.split(/\s+/).filter(w => w.length > 0).length : 0;
+                    const summaryText = p.summary || '✨ (no summary)';
+                    const summaryHtml = summaryText
+                        .replace(/&/g, '&amp;')
+                        .replace(/</g, '&lt;')
+                        .replace(/>/g, '&gt;');
+
+                    html += `
+                        <div class="card" data-id="${p.id}">
+                            <div class="title">${titleText}</div>
+                            <div class="meta">
+                                <span>📅 ${date}</span>
+                                <span>📝 ${wordCount} words</span>
+                            </div>
+                            <div class="summary">
+                                <span class="badge">AI</span> ${summaryHtml}
+                            </div>
+                        </div>
+                    `;
+                }
+                cardGrid.innerHTML = html;
+
+                // Attach click listeners to cards
+                document.querySelectorAll('.card').forEach(card => {
+                    card.addEventListener('click', function() {
+                        const id = this.dataset.id;
+                        openModal(id);
+                    });
+                });
+            }
+
+            // ─── Modal Functions ───
+            function openModal(id) {
+                const items = archive[currentTab];
+                const item = items.find(p => p.id === id);
+                if (!item) return;
+
+                currentModalId = id;
+
+                // Preserve blank lines in the content
+                const contentWithBlanks = item.content
+                    .replace(/\n\n/g, '\n\n') // Keep double newlines
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/\n/g, '<br />');
+
+                modalTitle.textContent = item.title || 'untitled';
+                modalMeta.textContent =
+                    `📅 ${item.date} · 📝 ${item.content.split(/\s+/).filter(w => w.length > 0).length} words`;
+                modalBody.innerHTML = contentWithBlanks;
+
+                // Hide thank you message initially
+                thankyouMessage.classList.remove('show');
+                thankyouMessage.textContent = '';
+                clearTimeout(typewriterTimer);
+
+                // Set download handler with typewriter thank you
+                modalDownloadBtn.onclick = function(e) {
+                    e.stopPropagation();
+                    if (item.fileData) {
+                        downloadDocx(item.fileData, item.title || 'untitled');
+                        showThankYou();
+                    } else {
+                        showToast('⚠️ file data not available', 'error');
+                    }
+                };
+
+                // Set delete handler
+                modalDeleteBtn.onclick = function(e) {
+                    e.stopPropagation();
+                    if (confirm(`Remove this ${currentTab.slice(0, -1)}?`)) {
+                        const items = archive[currentTab];
+                        archive[currentTab] = items.filter(p => p.id !== id);
+                        saveArchive();
+                        closeModal();
+                        showToast(`🗑️ removed from ${currentTab}`, '');
+                    }
+                };
+
+                modal.classList.add('show');
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closeModal() {
+                modal.classList.remove('show');
+                document.body.style.overflow = '';
+                currentModalId = null;
+                thankyouMessage.classList.remove('show');
+                thankyouMessage.textContent = '';
+                clearTimeout(typewriterTimer);
+            }
+
+            // ─── Typewriter Thank You ───
+            function showThankYou() {
+                const message = "Thank you for taking the time to view my mind <3";
+                thankyouMessage.textContent = '';
+                thankyouMessage.classList.add('show');
+
+                let index = 0;
+                clearTimeout(typewriterTimer);
+
+                function typeChar() {
+                    if (index < message.length) {
+                        thankyouMessage.textContent += message.charAt(index);
+                        index++;
+                        typewriterTimer = setTimeout(typeChar, 30 + Math.random() * 40);
+                    } else {
+                        // Add cursor blink
+                        thankyouMessage.innerHTML += '<span class="cursor"></span>';
+                    }
+                }
+
+                typeChar();
+
+                // Auto-hide after 8 seconds
+                setTimeout(() => {
+                    thankyouMessage.classList.remove('show');
+                    setTimeout(() => {
+                        thankyouMessage.textContent = '';
+                    }, 400);
+                }, 8000);
+            }
+
+            // ─── Download .docx from base64 ───
+            function downloadDocx(base64Data, filename) {
+                if (!base64Data) return;
+                try {
+                    const binary = atob(base64Data);
+                    const array = new Uint8Array(binary.length);
+                    for (let i = 0; i < binary.length; i++) {
+                        array[i] = binary.charCodeAt(i);
+                    }
+                    const blob = new Blob([array], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = filename.endsWith('.docx') ? filename : filename + '.docx';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                } catch (e) {
+                    showToast('⚠️ could not download file', 'error');
+                    console.warn('download error', e);
+                }
+            }
+
+            // ─── Save archive ───
+            function saveArchive() {
+                try {
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(archive));
+                } catch (_) { /* ignore */ }
+                render();
+            }
+
+            // ─── Toast ───
+            function showToast(msg, type) {
+                // Simple inline toast - we'll use a temporary one
+                const toast = document.createElement('div');
+                toast.style.cssText = `
+                    position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%);
+                    background: var(--bg-card); border: 1px solid var(--border);
+                    border-radius: 12px; padding: 0.7rem 1.4rem;
+                    color: ${type === 'error' ? '#e0b0b0' : '#b0e0d0'};
+                    font-size: 0.9rem; z-index: 2000;
+                    opacity: 0; transition: opacity 0.4s ease;
+                    font-family: var(--font); max-width: 90%;
+                `;
+                toast.textContent = msg;
+                document.body.appendChild(toast);
+
+                requestAnimationFrame(() => {
+                    toast.style.opacity = '1';
+                });
+
+                setTimeout(() => {
+                    toast.style.opacity = '0';
+                    setTimeout(() => toast.remove(), 400);
+                }, 3000);
+            }
+
+            // ─── Tab switching ───
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    currentTab = this.dataset.tab;
+                    render();
+                });
+            });
+
+            // ─── Modal close events ───
+            modalCloseBtn.addEventListener('click', closeModal);
+            modal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeModal();
+                }
+            });
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    closeModal();
+                }
+            });
+
+            // ─── Particle Animation ───
+            function initParticles() {
+                const canvas = document.getElementById('particles-canvas');
+                const ctx = canvas.getContext('2d');
+                let width, height;
+                let particles = [];
+
+                function resize() {
+                    width = window.innerWidth;
+                    height = window.innerHeight;
+                    canvas.width = width;
+                    canvas.height = height;
+                }
+
+                window.addEventListener('resize', resize);
+                resize();
+
+                const PARTICLE_COUNT = 80;
+                for (let i = 0; i < PARTICLE_COUNT; i++) {
+                    particles.push({
+                        x: Math.random() * width,
+                        y: Math.random() * height,
+                        radius: Math.random() * 1.8 + 0.5,
+                        speedX: (Math.random() - 0.5) * 0.25,
+                        speedY: (Math.random() - 0.5) * 0.15 - 0.05,
+                        opacity: Math.random() * 0.6 + 0.1,
+                    });
+                }
+
+                function drawParticles() {
+                    ctx.clearRect(0, 0, width, height);
+
+                    for (const p of particles) {
+                        p.x += p.speedX;
+                        p.y += p.speedY;
+
+                        if (p.x < 0) p.x = width;
+                        if (p.x > width) p.x = 0;
+                        if (p.y < 0) p.y = height;
+                        if (p.y > height) p.y = 0;
+
+                        const pulse = Math.sin(Date.now() * 0.001 + p.x * 0.01) * 0.15 + 0.5;
+                        const alpha = p.opacity * pulse * 0.8;
+
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                        ctx.fillStyle = `rgba(136, 204, 255, ${alpha})`;
+                        ctx.shadowColor = `rgba(136, 204, 255, ${alpha * 0.3})`;
+                        ctx.shadowBlur = 12;
+                        ctx.fill();
+                    }
+
+                    requestAnimationFrame(drawParticles);
+                }
+
+                drawParticles();
+            }
+
+            // ─── Boot ───
+            initParticles();
+
+            // Set up repo config - user can override this
+            window.AFTERLIGHT_REPO = {
+                owner: 'your-username', // CHANGE THIS
+                repo: 'your-repo', // CHANGE THIS
+                branch: 'main'
+            };
+
+            // Try to auto-detect from the page URL
+            try {
+                const urlParts = window.location.hostname.split('.');
+                if (urlParts.includes('github.io')) {
+                    const owner = urlParts[0];
+                    const pathParts = window.location.pathname.split('/').filter(p => p.length > 0);
+                    if (pathParts.length > 0) {
+                        window.AFTERLIGHT_REPO.owner = owner;
+                        window.AFTERLIGHT_REPO.repo = pathParts[0];
+                    }
+                }
+            } catch (_) { /* ignore */ }
+
+            console.log('🌙 Afterlight ready · repo:', window.AFTERLIGHT_REPO);
+
+            loadArchive();
+
+            // Also expose a refresh function
+            window.refreshPoems = function() {
+                loadArchive();
+            };
+
+        })();
+    </script>
+
+</body>
+</html>
