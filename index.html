@@ -4,173 +4,162 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Afterlight · archive</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js">
-    </script>
+
+    <!-- mammoth.js: docx -> html -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+    <!-- jszip: read docx package metadata (creation date) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <!-- DOMPurify: sanitize converted html before it hits the page -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
 
     <style>
-        *,
-        *::before,
-        *::after {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         :root {
-            --bg: #000000;
-            --bg-card: #0a0a0a;
-            --bg-hover: #141414;
-            --border: #1f1f1f;
-            --text: #e8e8e8;
-            --text-muted: #888888;
-            --accent: #88ccff;
-            --accent-dim: #447799;
+            --bg: #07080a;
+            --bg-card: #0d0f12;
+            --bg-hover: #14171b;
+            --border: #1e2126;
+            --border-soft: #171a1e;
+            --text: #e9e7e1;
+            --text-muted: #83898f;
+            --text-faint: #565b60;
+            --accent: #9fc9e8;
+            --accent-dim: #4d6a80;
+            --accent-glow: rgba(159, 201, 232, 0.12);
             --shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
-            --radius: 16px;
-            --font: 'Georgia', 'Palatino', serif;
-            --transition: 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            --radius: 14px;
+            --display: 'Cormorant Garamond', 'Palatino Linotype', Georgia, serif;
+            --serif: Georgia, 'Palatino Linotype', 'Palatino', serif;
+            --transition: 0.45s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        html,
-        body {
-            height: 100%;
-            margin: 0;
-            background: var(--bg);
-        }
+        html, body { height: 100%; background: var(--bg); }
 
         body {
             color: var(--text);
-            font-family: var(--font);
+            font-family: var(--serif);
             min-height: 100vh;
-            padding: 2rem 1.5rem 2rem;
+            padding: 2.5rem 1.5rem 2rem;
             overflow-x: hidden;
             display: flex;
             flex-direction: column;
         }
 
-        /* ── Particle Canvas ── */
         #particles-canvas {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
             z-index: 0;
             pointer-events: none;
+            opacity: 0.7;
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1180px;
             margin: 0 auto;
             position: relative;
             z-index: 1;
             flex: 1;
             display: flex;
             flex-direction: column;
+            width: 100%;
         }
 
-        /* ── Scrollbar ── */
-        ::-webkit-scrollbar {
-            width: 4px;
-        }
-        ::-webkit-scrollbar-track {
-            background: var(--bg);
-        }
-        ::-webkit-scrollbar-thumb {
-            background: var(--accent-dim);
-            border-radius: 10px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--accent);
-        }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: var(--accent-dim); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 
         /* ── Header ── */
         header {
             text-align: center;
-            margin-bottom: 2.5rem;
-            padding-top: 0.5rem;
+            margin-bottom: 2.2rem;
+            padding-top: 0.25rem;
+        }
+
+        .logo-mark {
+            width: 30px;
+            height: 30px;
+            color: var(--accent);
+            opacity: 0.85;
+            display: block;
+            margin: 0 auto 0.6rem;
         }
 
         header h1 {
-            font-size: 3.2rem;
-            font-weight: 400;
-            letter-spacing: 0.06em;
+            font-family: var(--display);
+            font-size: 3.6rem;
+            font-weight: 500;
+            letter-spacing: 0.05em;
             color: var(--text);
-            text-shadow: 0 0 80px rgba(136, 204, 255, 0.15);
+            text-shadow: 0 0 90px var(--accent-glow);
         }
 
         header .tagline {
             color: var(--text-muted);
-            font-size: 1.1rem;
-            margin-top: 0.2rem;
-            letter-spacing: 0.04em;
-            opacity: 0.8;
-        }
-
-        header .tagline .spiral {
-            font-size: 1.2rem;
-            vertical-align: middle;
+            font-family: var(--serif);
+            font-style: italic;
+            font-size: 1.05rem;
+            margin-top: 0.35rem;
+            letter-spacing: 0.02em;
+            opacity: 0.85;
         }
 
         /* ── Tabs ── */
         .tabs {
             display: flex;
-            gap: 2rem;
+            gap: 0.6rem;
             justify-content: center;
             margin-bottom: 2rem;
             border-bottom: 1px solid var(--border);
-            padding-bottom: 0.6rem;
+            padding-bottom: 0.7rem;
         }
 
         .tabs button {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
             background: transparent;
-            border: none;
+            border: 1px solid transparent;
             color: var(--text-muted);
-            font-size: 1.1rem;
-            font-family: var(--font);
-            padding: 0.4rem 1.2rem;
+            font-size: 1rem;
+            font-family: var(--serif);
+            padding: 0.45rem 1.3rem;
             cursor: pointer;
             transition: var(--transition);
-            letter-spacing: 0.04em;
+            letter-spacing: 0.03em;
             border-radius: 30px;
         }
 
-        .tabs button:hover {
-            color: var(--text);
-            background: var(--bg-card);
-        }
+        .tabs button svg { width: 15px; height: 15px; opacity: 0.75; }
+
+        .tabs button:hover { color: var(--text); background: var(--bg-card); }
 
         .tabs button.active {
             color: var(--text);
             background: var(--bg-card);
-            border: 1px solid var(--border);
+            border-color: var(--border);
         }
 
         /* ── Loading state ── */
         .loading-state {
             text-align: center;
-            padding: 3rem 1rem;
+            padding: 3.5rem 1rem;
             color: var(--text-muted);
             grid-column: 1 / -1;
         }
 
-        .loading-state .spinner {
+        .loading-state .spinner-icon {
+            width: 28px; height: 28px;
+            color: var(--accent-dim);
+            animation: spin 1.4s linear infinite;
             display: inline-block;
-            animation: spin 2s linear infinite;
-            font-size: 2rem;
-            opacity: 0.5;
         }
 
-        @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-            100% {
-                transform: rotate(360deg);
-            }
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* ── Card Grid ── */
+        /* ── Grid header ── */
         .grid-header {
             display: flex;
             justify-content: space-between;
@@ -180,269 +169,299 @@
 
         .grid-header h2 {
             font-weight: 400;
-            font-size: 1.1rem;
-            letter-spacing: 0.04em;
+            font-size: 1rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
             color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
+        .grid-header h2 svg { width: 15px; height: 15px; opacity: 0.7; }
+
         .grid-header .count {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            opacity: 0.6;
+            font-size: 0.78rem;
+            color: var(--text-faint);
+            font-variant-numeric: tabular-nums;
         }
 
         .card-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-            gap: 1.5rem;
+            gap: 1.4rem;
             margin-bottom: 2.5rem;
             flex: 1;
         }
 
-        /* ── Individual Card ── */
+        /* ── Card ── */
         .card {
             background: var(--bg-card);
             border: 1px solid var(--border);
             border-radius: var(--radius);
-            padding: 1.4rem 1.2rem;
+            padding: 1.3rem 1.25rem 1.2rem;
             transition: var(--transition);
             cursor: pointer;
             display: flex;
             flex-direction: column;
-            min-height: 160px;
+            min-height: 168px;
             position: relative;
-            animation: fadeIn 0.6s ease forwards;
+            animation: fadeIn 0.55s ease forwards;
             opacity: 0;
+            overflow: hidden;
         }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent-dim), transparent);
+            opacity: 0;
+            transition: var(--transition);
+        }
+
+        .card:hover::before { opacity: 0.9; }
 
         .card:hover {
             border-color: var(--accent-dim);
             background: var(--bg-hover);
-            box-shadow: 0 0 40px rgba(136, 204, 255, 0.03);
-            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45), 0 0 40px var(--accent-glow);
+            transform: translateY(-3px);
         }
 
         .card .title {
-            font-size: 1.2rem;
-            font-weight: 500;
+            font-family: var(--display);
+            font-size: 1.3rem;
+            font-weight: 600;
             color: var(--text);
-            margin-bottom: 0.2rem;
-            letter-spacing: 0.02em;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 0.4rem;
+            margin-bottom: 0.25rem;
+            letter-spacing: 0.01em;
+            border-bottom: 1px solid var(--border-soft);
+            padding-bottom: 0.5rem;
         }
 
         .card .meta {
             display: flex;
-            gap: 0.8rem;
-            font-size: 0.7rem;
-            color: var(--text-muted);
-            margin-bottom: 0.6rem;
-            margin-top: 0.2rem;
-            opacity: 0.6;
+            gap: 1rem;
+            font-size: 0.72rem;
+            color: var(--text-faint);
+            margin-bottom: 0.7rem;
+            margin-top: 0.35rem;
         }
 
+        .card .meta span { display: inline-flex; align-items: center; gap: 0.35rem; }
+        .card .meta svg { width: 12px; height: 12px; opacity: 0.7; flex-shrink: 0; }
+
         .card .summary {
-            font-size: 0.9rem;
+            font-size: 0.88rem;
             color: var(--text-muted);
-            line-height: 1.5;
-            margin-bottom: 0.2rem;
+            line-height: 1.55;
             font-style: italic;
             border-left: 2px solid var(--accent-dim);
-            padding-left: 0.6rem;
+            padding-left: 0.7rem;
         }
 
         .card .summary .badge {
             display: inline-block;
-            background: var(--accent-dim);
-            color: var(--bg);
-            font-size: 0.55rem;
-            padding: 0.05rem 0.5rem;
-            border-radius: 20px;
-            margin-right: 0.4rem;
-            font-weight: 600;
-            letter-spacing: 0.04em;
-            vertical-align: middle;
-            opacity: 0.8;
+            font-style: normal;
+            color: var(--accent);
+            font-size: 0.6rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            margin-right: 0.5rem;
+            opacity: 0.85;
         }
 
-        .card .body {
-            display: none;
-        }
+        .card .body { display: none; }
 
-        /* ── Empty state ── */
+        /* ── Empty / error states ── */
         .empty-state {
             text-align: center;
-            padding: 3rem 1rem;
+            padding: 3.5rem 1rem;
             color: var(--text-muted);
             grid-column: 1 / -1;
         }
 
         .empty-state .big-icon {
-            font-size: 2.8rem;
+            width: 46px; height: 46px;
+            color: var(--accent-dim);
             display: block;
-            margin-bottom: 0.6rem;
-            opacity: 0.4;
+            margin: 0 auto 0.8rem;
+            opacity: 0.7;
         }
 
         .empty-state h3 {
-            font-weight: 400;
-            font-size: 1.1rem;
+            font-family: var(--display);
+            font-weight: 500;
+            font-size: 1.3rem;
             color: var(--text);
         }
 
         .empty-state .hint {
             font-size: 0.85rem;
-            opacity: 0.6;
-            margin-top: 0.4rem;
+            opacity: 0.7;
+            margin-top: 0.5rem;
+            line-height: 1.6;
         }
 
-        /* ── Modal (Pop-up) ── */
+        .empty-state .hint code {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 0.1rem 0.4rem;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+
+        .retry-btn {
+            margin-top: 1.1rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 0.45rem 1.3rem;
+            border-radius: 30px;
+            cursor: pointer;
+            font-family: var(--serif);
+            transition: var(--transition);
+        }
+        .retry-btn:hover { color: var(--text); border-color: var(--accent-dim); }
+
+        /* ── Modal ── */
         .modal {
             display: none;
             position: fixed;
             z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
+            left: 0; top: 0;
+            width: 100%; height: 100%;
+            background: rgba(3, 4, 5, 0.88);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
             justify-content: center;
             align-items: center;
-            animation: fadeIn 0.4s ease;
+            animation: fadeIn 0.35s ease;
             padding: 1.5rem;
         }
 
-        .modal.show {
-            display: flex;
-        }
+        .modal.show { display: flex; }
 
         .modal-content {
             background: var(--bg-card);
             border: 1px solid var(--border);
             border-radius: var(--radius);
-            max-width: 680px;
+            max-width: 700px;
             width: 100%;
-            max-height: 90vh;
+            max-height: 88vh;
             overflow-y: auto;
-            padding: 2rem 2rem 1.5rem;
+            padding: 2.1rem 2.1rem 1.5rem;
             position: relative;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9), 0 0 80px rgba(136, 204, 255, 0.04);
+            box-shadow: 0 24px 70px rgba(0, 0, 0, 0.9), 0 0 90px var(--accent-glow);
             animation: modalIn 0.4s ease;
         }
 
         .modal-content .close-btn {
             position: absolute;
-            top: 0.8rem;
-            right: 1.2rem;
-            font-size: 1.8rem;
+            top: 1rem; right: 1.2rem;
+            width: 30px; height: 30px;
+            display: flex; align-items: center; justify-content: center;
             color: var(--text-muted);
             cursor: pointer;
             transition: var(--transition);
             background: none;
             border: none;
-            font-family: var(--font);
         }
-
-        .modal-content .close-btn:hover {
-            color: var(--text);
-            transform: rotate(90deg);
-        }
+        .modal-content .close-btn svg { width: 16px; height: 16px; }
+        .modal-content .close-btn:hover { color: var(--text); transform: rotate(90deg); }
 
         .modal-content .modal-title {
-            font-size: 1.8rem;
-            font-weight: 500;
+            font-family: var(--display);
+            font-size: 2rem;
+            font-weight: 600;
             color: var(--text);
-            margin-bottom: 0.2rem;
+            margin-bottom: 0.25rem;
             padding-right: 2rem;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 0.4rem;
+            border-bottom: 1px solid var(--border-soft);
+            padding-bottom: 0.5rem;
         }
 
         .modal-content .modal-meta {
             display: flex;
-            gap: 1rem;
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            margin-bottom: 1.2rem;
-            margin-top: 0.2rem;
-            opacity: 0.6;
+            gap: 1.2rem;
+            font-size: 0.78rem;
+            color: var(--text-faint);
+            margin-bottom: 1.3rem;
+            margin-top: 0.4rem;
         }
+        .modal-content .modal-meta span { display: inline-flex; align-items: center; gap: 0.4rem; }
+        .modal-content .modal-meta svg { width: 13px; height: 13px; opacity: 0.7; }
 
         .modal-content .modal-body {
             font-size: 1.05rem;
-            line-height: 1.9;
+            line-height: 1.85;
             color: var(--text);
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            border-left: 2px solid var(--accent-dim);
-            padding-left: 1.2rem;
-            margin-bottom: 1.5rem;
-            max-height: 50vh;
+            margin-bottom: 1.6rem;
+            max-height: 52vh;
             overflow-y: auto;
+            padding-left: 1.3rem;
+            background-image: repeating-linear-gradient(
+                to bottom,
+                var(--accent-dim) 0px,
+                var(--accent-dim) 5px,
+                transparent 5px,
+                transparent 14px
+            );
+            background-size: 2px 100%;
+            background-repeat: no-repeat;
+            background-position: left top;
         }
 
-        .modal-content .modal-body .blank-line {
-            display: block;
-            height: 0.8rem;
+        .modal-content .modal-body p { margin-bottom: 0.9em; }
+        .modal-content .modal-body h1,
+        .modal-content .modal-body h2,
+        .modal-content .modal-body h3 {
+            font-family: var(--display);
+            margin: 0.6em 0 0.4em;
+            color: var(--text);
         }
+        .modal-content .modal-body strong { color: var(--text); }
+        .modal-content .modal-body em { color: var(--text); }
 
         .modal-content .modal-actions {
             display: flex;
             gap: 0.8rem;
             border-top: 1px solid var(--border);
-            padding-top: 1rem;
+            padding-top: 1.1rem;
             flex-wrap: wrap;
             align-items: center;
             position: relative;
         }
 
         .modal-content .modal-actions button {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
             background: transparent;
-            border: 1px solid var(--border);
-            color: var(--text-muted);
-            padding: 0.4rem 1.2rem;
+            border: 1px solid var(--accent-dim);
+            color: var(--accent);
+            padding: 0.5rem 1.3rem;
             border-radius: 30px;
             font-size: 0.85rem;
             cursor: pointer;
             transition: var(--transition);
-            font-family: var(--font);
+            font-family: var(--serif);
             letter-spacing: 0.02em;
         }
+        .modal-content .modal-actions button svg { width: 14px; height: 14px; }
 
         .modal-content .modal-actions button:hover {
-            border-color: var(--accent-dim);
-            color: var(--text);
-            background: rgba(136, 204, 255, 0.04);
+            background: var(--accent-glow);
+            border-color: var(--accent);
         }
 
-        .modal-content .modal-actions button.download {
-            border-color: var(--accent-dim);
-            color: var(--accent);
-        }
-
-        .modal-content .modal-actions button.download:hover {
-            background: rgba(136, 204, 255, 0.08);
-        }
-
-        .modal-content .modal-actions button.delete {
-            border-color: #4a2a2a;
-            color: #8a6a6a;
-        }
-
-        .modal-content .modal-actions button.delete:hover {
-            background: rgba(200, 80, 80, 0.06);
-            border-color: #7a4a4a;
-        }
-
-        /* ── Typewriter Thank You ── */
+        /* ── Typewriter thank-you ── */
         .thankyou-message {
             position: absolute;
             bottom: calc(100% + 12px);
-            left: 0;
-            right: 0;
+            left: 0; right: 0;
             background: var(--bg-card);
             border: 1px solid var(--accent-dim);
             border-radius: 12px;
@@ -457,157 +476,69 @@
             min-height: 3rem;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
         }
-
-        .thankyou-message.show {
-            opacity: 1;
-            transform: translateY(0);
-        }
+        .thankyou-message.show { opacity: 1; transform: translateY(0); }
 
         .thankyou-message .cursor {
             display: inline-block;
-            width: 2px;
-            height: 1.1em;
+            width: 2px; height: 1.1em;
             background: var(--accent);
             margin-left: 2px;
             vertical-align: text-bottom;
             animation: blink 0.8s step-end infinite;
         }
-
-        @keyframes blink {
-            0%,
-            100% {
-                opacity: 1;
-            }
-            50% {
-                opacity: 0;
-            }
-        }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 
         /* ── Footer ── */
         .footer {
             text-align: center;
-            color: var(--text-muted);
-            font-size: 0.85rem;
+            color: var(--text-faint);
+            font-size: 0.82rem;
             padding: 2rem 0 0.5rem;
             border-top: 1px solid var(--border);
             margin-top: 1rem;
-            opacity: 0.6;
-            letter-spacing: 0.04em;
+            letter-spacing: 0.03em;
             line-height: 1.8;
         }
+        .footer .signature { font-style: italic; color: var(--text-muted); }
+        .footer .logo-mark { width: 14px; height: 14px; display: inline-block; vertical-align: middle; opacity: 0.6; }
 
-        .footer .signature {
-            font-style: italic;
-            color: var(--text-muted);
-            opacity: 0.8;
-        }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: scale(1); } }
+        @keyframes modalIn { from { opacity: 0; transform: translateY(26px) scale(0.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
 
-        .footer .spiral {
-            font-size: 1rem;
-            vertical-align: middle;
-        }
+        .card:nth-child(1) { animation-delay: 0.02s; }
+        .card:nth-child(2) { animation-delay: 0.05s; }
+        .card:nth-child(3) { animation-delay: 0.08s; }
+        .card:nth-child(4) { animation-delay: 0.11s; }
+        .card:nth-child(5) { animation-delay: 0.14s; }
+        .card:nth-child(6) { animation-delay: 0.17s; }
+        .card:nth-child(7) { animation-delay: 0.20s; }
+        .card:nth-child(8) { animation-delay: 0.23s; }
 
-        /* ── Animations ── */
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: scale(0.96);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
         }
 
-        @keyframes modalIn {
-            from {
-                opacity: 0;
-                transform: translateY(30px) scale(0.95);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-        }
-
-        .card:nth-child(1) {
-            animation-delay: 0.02s;
-        }
-        .card:nth-child(2) {
-            animation-delay: 0.06s;
-        }
-        .card:nth-child(3) {
-            animation-delay: 0.10s;
-        }
-        .card:nth-child(4) {
-            animation-delay: 0.14s;
-        }
-        .card:nth-child(5) {
-            animation-delay: 0.18s;
-        }
-        .card:nth-child(6) {
-            animation-delay: 0.22s;
-        }
-        .card:nth-child(7) {
-            animation-delay: 0.26s;
-        }
-        .card:nth-child(8) {
-            animation-delay: 0.30s;
-        }
-
-        /* ── Responsive ── */
         @media (max-width: 600px) {
-            body {
-                padding: 1rem 0.8rem 1rem;
-            }
-
-            header h1 {
-                font-size: 2.4rem;
-            }
-
-            .card-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .tabs {
-                gap: 0.5rem;
-            }
-            .tabs button {
-                font-size: 0.9rem;
-                padding: 0.2rem 0.8rem;
-            }
-
-            .modal-content {
-                padding: 1.5rem 1.2rem;
-            }
-            .modal-content .modal-title {
-                font-size: 1.4rem;
-            }
-            .modal-content .modal-body {
-                font-size: 0.95rem;
-                padding-left: 0.8rem;
-            }
-
-            .thankyou-message {
-                font-size: 0.8rem;
-                padding: 0.6rem 1rem;
-                min-height: 2.5rem;
-            }
+            body { padding: 1.2rem 0.8rem 1rem; }
+            header h1 { font-size: 2.5rem; }
+            .card-grid { grid-template-columns: 1fr; }
+            .tabs { gap: 0.3rem; }
+            .tabs button { font-size: 0.9rem; padding: 0.35rem 0.9rem; }
+            .modal-content { padding: 1.6rem 1.2rem; }
+            .modal-content .modal-title { font-size: 1.5rem; }
+            .modal-content .modal-body { font-size: 0.98rem; padding-left: 0.9rem; }
+            .thankyou-message { font-size: 0.8rem; padding: 0.6rem 1rem; min-height: 2.5rem; }
         }
 
         @media (max-width: 400px) {
-            .modal-content .modal-actions {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            .modal-content .modal-actions button {
-                text-align: center;
-            }
-            .thankyou-message {
-                position: relative;
-                bottom: auto;
-                margin-bottom: 0.6rem;
-            }
+            .modal-content .modal-actions { flex-direction: column; align-items: stretch; }
+            .modal-content .modal-actions button { justify-content: center; }
+            .thankyou-message { position: relative; bottom: auto; margin-bottom: 0.6rem; }
+        }
+
+        button:focus-visible, .card:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
         }
     </style>
 </head>
@@ -618,47 +549,66 @@
     <div class="container">
 
         <header>
+            <svg class="logo-mark" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <path d="M12 2C7 5 5 8.5 5 12.5C5 16.6 8.1 20 12 20C15.9 20 19 16.6 19 12.5C19 10.7 18.4 9.1 17.4 7.8C17.7 9 17.6 10.3 17 11.4C16.6 8.6 15 6.1 12 2Z" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/>
+            </svg>
             <h1>Afterlight</h1>
-            <div class="tagline">
-                The light that remains after everything else is gone
-            </div>
+            <div class="tagline">the light that remains after everything else is gone</div>
         </header>
 
-        <div class="tabs">
-            <button class="active" data-tab="poems">Poems</button>
-            <button data-tab="stories">Stories</button>
+        <div class="tabs" role="tablist">
+            <button class="active" data-tab="poems" role="tab" aria-selected="true">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M4 5.5C4 4.7 4.7 4 5.5 4H11V19H5.5C4.7 19 4 18.3 4 17.5V5.5Z" stroke="currentColor" stroke-width="1.3"/><path d="M20 5.5C20 4.7 19.3 4 18.5 4H13V19H18.5C19.3 19 20 18.3 20 17.5V5.5Z" stroke="currentColor" stroke-width="1.3"/></svg>
+                Poems
+            </button>
+            <button data-tab="stories" role="tab" aria-selected="false">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M4 19.5V6C4 4.9 4.9 4 6 4H17C18.1 4 19 4.9 19 6V18" stroke="currentColor" stroke-width="1.3"/><path d="M6 20C4.9 20 4 19.1 4 18C4 16.9 4.9 16 6 16H19" stroke="currentColor" stroke-width="1.3"/></svg>
+                Stories
+            </button>
         </div>
 
         <div class="grid-header">
-            <h2 id="gridTitle">poems</h2>
+            <h2 id="gridTitle">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M4 5.5C4 4.7 4.7 4 5.5 4H11V19H5.5C4.7 19 4 18.3 4 17.5V5.5Z" stroke="currentColor" stroke-width="1.3"/><path d="M20 5.5C20 4.7 19.3 4 18.5 4H13V19H18.5C19.3 19 20 18.3 20 17.5V5.5Z" stroke="currentColor" stroke-width="1.3"/></svg>
+                poems
+            </h2>
             <span class="count" id="itemCount">0</span>
         </div>
 
         <div class="card-grid" id="cardGrid">
             <div class="loading-state">
-                <span class="spinner">🌀</span>
-                <p style="margin-top:0.6rem;opacity:0.5;">gathering from the void...</p>
+                <svg class="spinner-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="40 100"/>
+                </svg>
+                <p style="margin-top:0.6rem;opacity:0.6;">gathering from the archive&hellip;</p>
             </div>
         </div>
 
         <div class="footer">
-            <div>A collection of thoughts, experiences and quiet devastation.</div>
-            <div class="signature">~ J C.s</div>
-            <div style="margin-top:0.2rem;opacity:0.4;font-size:0.7rem;">
+            <div>A collection of thoughts, experiences, and quiet devastation.</div>
+            <div class="signature">~ J C.</div>
+            <div style="margin-top:0.3rem;">
+                <svg class="logo-mark" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M12 2C7 5 5 8.5 5 12.5C5 16.6 8.1 20 12 20C15.9 20 19 16.6 19 12.5C19 10.7 18.4 9.1 17.4 7.8C17.7 9 17.6 10.3 17 11.4C16.6 8.6 15 6.1 12 2Z" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/></svg>
                 afterlight
             </div>
         </div>
 
     </div>
 
+    <!-- ─── Modal ─── -->
     <div id="modal" class="modal">
         <div class="modal-content">
-            <button class="close-btn" id="modalCloseBtn">✕</button>
+            <button class="close-btn" id="modalCloseBtn" aria-label="Close">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 5L19 19M19 5L5 19" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+            </button>
             <div class="modal-title" id="modalTitle">Title</div>
-            <div class="modal-meta" id="modalMeta"> date ·  words</div>
+            <div class="modal-meta" id="modalMeta"></div>
             <div class="modal-body" id="modalBody">Content</div>
             <div class="modal-actions">
-                <button class="download" id="modalDownloadBtn">⬇ download .docx</button>
+                <button class="download" id="modalDownloadBtn">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3V15M12 15L7 10M12 15L17 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 17V19C5 20.1 5.9 21 7 21H17C18.1 21 19 20.1 19 19V17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                    download .docx
+                </button>
                 <div class="thankyou-message" id="thankyouMessage"></div>
             </div>
         </div>
@@ -667,64 +617,60 @@
     <script>
         (function() {
             'use strict';
+
+            // ─── SVG icons used in dynamically-rendered markup ───
+            const ICONS = {
+                calendar: '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="5.5" width="16" height="14.5" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M4 9.5H20" stroke="currentColor" stroke-width="1.3"/><path d="M8 3.5V6.5M16 3.5V6.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>',
+                words: '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 6H19M5 12H19M5 18H13" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>',
+                moon: '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C7 5 5 8.5 5 12.5C5 16.6 8.1 20 12 20C15.9 20 19 16.6 19 12.5C19 10.7 18.4 9.1 17.4 7.8C17.7 9 17.6 10.3 17 11.4C16.6 8.6 15 6.1 12 2Z" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/></svg>',
+                candle: '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3C12 3 13.5 5 13.5 6.3C13.5 7.2 12.8 7.8 12 7.8C11.2 7.8 10.5 7.2 10.5 6.3C10.5 5 12 3 12 3Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><rect x="9.5" y="9" width="5" height="11.5" rx="0.8" stroke="currentColor" stroke-width="1.2"/></svg>'
+            };
+
+            // ─── DOM refs ───
             const cardGrid = document.getElementById('cardGrid');
             const itemCount = document.getElementById('itemCount');
             const gridTitle = document.getElementById('gridTitle');
             const tabs = document.querySelectorAll('.tabs button');
+
             const modal = document.getElementById('modal');
             const modalCloseBtn = document.getElementById('modalCloseBtn');
             const modalTitle = document.getElementById('modalTitle');
             const modalMeta = document.getElementById('modalMeta');
             const modalBody = document.getElementById('modalBody');
             const modalDownloadBtn = document.getElementById('modalDownloadBtn');
-            const modalDeleteBtn = document.getElementById('modalDeleteBtn');
             const thankyouMessage = document.getElementById('thankyouMessage');
 
-
-            const STORAGE_KEY = 'afterlight_archive';
+            // ─── State ───
+            const STORAGE_KEY = 'afterlight_archive_v2';
             let archive = { poems: [], stories: [] };
             let currentTab = 'poems';
-            let currentModalId = null;
-            let typewriterTimer = null;
 
-
+            // ─── Config (REPO DETAILS) ───
             const REPO_CONFIG = {
                 owner: 'joshyxtc-byte',
                 repo: 'Afterlight',
                 branch: 'main'
             };
 
+            // ─── Helper: plain text with paragraph structure (for summaries/word counts) ───
             function htmlToPlainTextWithStructure(html) {
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(html, 'text/html');
                 const body = doc.body;
 
                 function extract(node) {
-                    let result = '';
-                    if (node.nodeType === Node.TEXT_NODE) {
-                        return node.textContent;
+                    if (node.nodeType === Node.TEXT_NODE) return node.textContent;
+                    if (node.nodeType !== Node.ELEMENT_NODE) return '';
+                    const tag = node.tagName.toLowerCase();
+                    const blockTags = ['p', 'div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'li', 'blockquote', 'pre'];
+                    let childrenText = '';
+                    for (const child of node.childNodes) childrenText += extract(child);
+                    if (tag === 'br') return '\n';
+                    if (blockTags.includes(tag)) {
+                        const trimmed = childrenText.trim();
+                        return trimmed.length > 0 ? trimmed + '\n' : '\n';
                     }
-                    if (node.nodeType === Node.ELEMENT_NODE) {
-                        const tag = node.tagName.toLowerCase();
-                        const blockTags = ['p', 'div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'li', 'blockquote', 'pre'];
-                        let childrenText = '';
-                        for (const child of node.childNodes) {
-                            childrenText += extract(child);
-                        }
-                        if (tag === 'br') {
-                            return '\n';
-                        }
-                        if (blockTags.includes(tag)) {
-                            let trimmed = childrenText.trim();
-                            if (trimmed.length > 0) {
-                                return trimmed + '\n';
-                            } else {
-                                return '';
-                            }
-                        }
-                        return childrenText;
-                    }
-                    return '';
+                    return childrenText;
                 }
 
                 let fullText = extract(body);
@@ -732,53 +678,66 @@
                 return fullText.trim();
             }
 
-            function generateSummary(text) {
-                if (!text || text.length < 20) return text || '';
+            // ─── Post-process mammoth html: keep blank paragraphs visible as stanza/paragraph breaks ───
+            function preserveBlankParagraphs(html) {
+                return html.replace(/<p>\s*<\/p>/g, '<p>&nbsp;</p>');
+            }
 
-                const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
-                if (sentences.length <= 2) return text;
+            // ─── Better extractive summary ───
+            // Falls back to first lines for poem-like text with little sentence punctuation.
+            function generateSummary(text) {
+                if (!text || text.trim().length < 20) return (text || '').trim();
+
+                const sentences = text.match(/[^.!?\n]+[.!?]+(\s|$)/g);
+
+                // Poem-like or unpunctuated text: no reliable sentences, so summarize by first lines instead.
+                if (!sentences || sentences.length < 2) {
+                    const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+                    const snippet = lines.slice(0, 2).join(' / ');
+                    return snippet.length > 160 ? snippet.slice(0, 160).trim() + '…' : snippet;
+                }
 
                 const stopwords = new Set([
                     'a', 'an', 'the', 'of', 'and', 'to', 'for', 'with', 'on', 'at', 'from', 'by',
                     'in', 'as', 'is', 'was', 'were', 'are', 'am', 'be', 'been', 'being', 'have',
                     'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may',
                     'might', 'must', 'shall', 'can', 'etc', 'i', 'you', 'he', 'she', 'it', 'we',
-                    'they', 'my', 'your', 'his', 'her', 'our', 'their', 'me', 'him', 'us', 'them'
+                    'they', 'my', 'your', 'his', 'her', 'our', 'their', 'me', 'him', 'us', 'them',
+                    'this', 'that', 'these', 'those', 'so', 'but', 'just', 'not', 'no'
                 ]);
 
-                const words = text.toLowerCase().match(/\b\w+\b/g) || [];
+                const words = text.toLowerCase().match(/\b[a-z']+\b/g) || [];
                 const freq = {};
                 for (const w of words) {
-                    if (!stopwords.has(w) && w.length > 2) {
-                        freq[w] = (freq[w] || 0) + 1;
-                    }
+                    if (!stopwords.has(w) && w.length > 2) freq[w] = (freq[w] || 0) + 1;
                 }
 
-                const scored = sentences.map(s => {
-                    const sWords = s.toLowerCase().match(/\b\w+\b/g) || [];
+                const scored = sentences.map((s, idx) => {
+                    const trimmed = s.trim();
+                    const sWords = trimmed.toLowerCase().match(/\b[a-z']+\b/g) || [];
                     let score = 0;
-                    for (const w of sWords) {
-                        if (freq[w]) score += freq[w];
-                    }
-                    if (sWords.length < 3) score *= 0.5;
-                    return { sentence: s.trim(), score };
+                    for (const w of sWords) if (freq[w]) score += freq[w];
+                    if (sWords.length > 0) score = score / Math.sqrt(sWords.length); // normalize for sentence length
+                    if (idx === 0) score *= 1.35; // opening line usually sets the scene
+                    if (sWords.length < 4) score *= 0.6;
+                    return { sentence: trimmed, score, idx };
                 });
 
-                scored.sort((a, b) => b.score - a.score);
-                let selected = [];
-                for (const s of scored) {
-                    if (selected.length >= 2) break;
-                    if (s.score === 0) continue;
-                    if (selected.length > 0 && selected[0].sentence === s.sentence) continue;
-                    selected.push(s);
+                const ranked = [...scored].sort((a, b) => b.score - a.score);
+                const chosen = [];
+                for (const s of ranked) {
+                    if (chosen.length >= 2) break;
+                    if (s.score <= 0) continue;
+                    if (chosen.some(c => c.sentence === s.sentence)) continue;
+                    chosen.push(s);
                 }
+                if (chosen.length === 0) return scored[0].sentence;
 
-                if (selected.length === 0) {
-                    return sentences[0].trim();
-                }
-                return selected.map(s => s.sentence).join(' ');
+                // Re-order chosen sentences by their original position so the summary reads naturally.
+                chosen.sort((a, b) => a.idx - b.idx);
+                return chosen.map(c => c.sentence).join(' ');
             }
-            
+
             function uid() {
                 return Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 6);
             }
@@ -786,43 +745,54 @@
             function blobToBase64(blob) {
                 return new Promise((resolve, reject) => {
                     const reader = new FileReader();
-                    reader.onload = function(e) {
-                        const dataUrl = e.target.result;
-                        const base64 = dataUrl.split(',')[1];
-                        resolve(base64);
-                    };
+                    reader.onload = e => resolve(e.target.result.split(',')[1]);
                     reader.onerror = reject;
                     reader.readAsDataURL(blob);
                 });
             }
 
+            // ─── Extract the document's own "created" date from docProps/core.xml ───
+            async function extractCreatedDate(zip) {
+                try {
+                    const coreFile = zip.file('docProps/core.xml');
+                    if (!coreFile) return null;
+                    const xmlText = await coreFile.async('text');
+                    const parser = new DOMParser();
+                    const xmlDoc = parser.parseFromString(xmlText, 'application/xml');
+                    const createdEl = xmlDoc.getElementsByTagNameNS('http://purl.org/dc/terms/', 'created')[0]
+                        || xmlDoc.getElementsByTagName('dcterms:created')[0];
+                    if (createdEl && createdEl.textContent) {
+                        const parsed = new Date(createdEl.textContent.trim());
+                        if (!isNaN(parsed.getTime())) return parsed;
+                    }
+                } catch (e) {
+                    console.warn('Could not read creation date from docx metadata:', e);
+                }
+                return null;
+            }
+
+            function formatDate(dateInput) {
+                if (!dateInput) return 'undated';
+                const d = new Date(dateInput);
+                if (isNaN(d.getTime())) return 'undated';
+                return d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+            }
+
+            // ─── Fetch and parse a folder from GitHub ───
             async function fetchAndParseFolder(folderName) {
-                const url =
-                    `https://api.github.com/repos/${REPO_CONFIG.owner}/${REPO_CONFIG.repo}/contents/${folderName}?ref=${REPO_CONFIG.branch}`;
+                const url = `https://api.github.com/repos/${REPO_CONFIG.owner}/${REPO_CONFIG.repo}/contents/${folderName}?ref=${REPO_CONFIG.branch}`;
 
                 try {
-                    const response = await fetch(url, {
-                        headers: { 'Accept': 'application/vnd.github.v3+json' }
-                    });
+                    const response = await fetch(url, { headers: { 'Accept': 'application/vnd.github.v3+json' } });
 
                     if (!response.ok) {
-                        if (response.status === 404) {
-                            console.warn(`Folder '${folderName}' not found in repo.`);
-                            return [];
-                        }
+                        if (response.status === 404) return [];
                         throw new Error(`GitHub API error: ${response.status}`);
                     }
 
                     const files = await response.json();
-                    const docxFiles = files.filter(f =>
-                        f.name.toLowerCase().endsWith('.docx') &&
-                        f.type === 'file'
-                    );
-
-                    if (docxFiles.length === 0) {
-                        console.warn(`No .docx files found in '${folderName}' folder.`);
-                        return [];
-                    }
+                    const docxFiles = files.filter(f => f.name.toLowerCase().endsWith('.docx') && f.type === 'file');
+                    if (docxFiles.length === 0) return [];
 
                     const items = [];
                     for (const file of docxFiles) {
@@ -830,26 +800,35 @@
                             const docxResponse = await fetch(file.download_url);
                             const arrayBuffer = await docxResponse.arrayBuffer();
 
-                            const result = await mammoth.convertToHtml({ arrayBuffer });
-                            const plainText = htmlToPlainTextWithStructure(result.value);
+                            // Parse the package for metadata (creation date) and for the docx-as-blob download.
+                            const zip = await JSZip.loadAsync(arrayBuffer);
+                            const createdDate = await extractCreatedDate(zip);
+
+                            // Convert to html preserving bold/italic/underline/headings/line breaks.
+                            const result = await mammoth.convertToHtml(
+                                { arrayBuffer },
+                                { styleMap: ['u => u'] }
+                            );
+                            const safeHtml = preserveBlankParagraphs(result.value);
+                            const plainText = htmlToPlainTextWithStructure(safeHtml);
 
                             const lines = plainText.split('\n').filter(l => l.trim().length > 0);
                             let title = lines.length > 0 ? lines[0].trim() : file.name.replace(/\.docx$/i, '');
                             if (title.length > 80) title = title.slice(0, 80) + '…';
 
                             const summary = generateSummary(plainText);
-                            const fileData = await fetch(file.download_url);
-                            const blob = await fileData.blob();
+                            const blob = await (await fetch(file.download_url)).blob();
                             const base64 = await blobToBase64(blob);
 
                             items.push({
                                 id: uid(),
                                 title: title,
+                                html: safeHtml,
                                 content: plainText,
                                 summary: summary,
-                                date: new Date().toISOString().slice(0, 10),
+                                createdDate: createdDate ? createdDate.toISOString() : null,
                                 fileName: file.name,
-                                fileData: base64,
+                                fileData: base64
                             });
                         } catch (err) {
                             console.warn(`Error parsing file ${file.name} in ${folderName}:`, err);
@@ -862,12 +841,22 @@
                 }
             }
 
+            function sortNewestFirst(items) {
+                return [...items].sort((a, b) => {
+                    const da = a.createdDate ? new Date(a.createdDate).getTime() : 0;
+                    const db = b.createdDate ? new Date(b.createdDate).getTime() : 0;
+                    return db - da;
+                });
+            }
+
+            // ─── Load from GitHub ───
             async function loadFromGitHub() {
-                const grid = document.getElementById('cardGrid');
-                grid.innerHTML = `
+                cardGrid.innerHTML = `
                     <div class="loading-state">
-                        <span class="spinner">🌀</span>
-                        <p style="margin-top:0.6rem;opacity:0.5;">Gathering my thoughts...</p>
+                        <svg class="spinner-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                            <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="40 100"/>
+                        </svg>
+                        <p style="margin-top:0.6rem;opacity:0.6;">reading the pages&hellip;</p>
                     </div>
                 `;
 
@@ -877,58 +866,35 @@
                         fetchAndParseFolder('stories')
                     ]);
 
-                    archive.poems = poems;
-                    archive.stories = stories;
+                    archive.poems = sortNewestFirst(poems);
+                    archive.stories = sortNewestFirst(stories);
 
-                    try {
-                        localStorage.setItem(STORAGE_KEY, JSON.stringify(archive));
-                    } catch (_) { /* ignore */ }
+                    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(archive)); } catch (_) {}
 
                     render();
 
                     if (poems.length === 0 && stories.length === 0) {
-                        const grid = document.getElementById('cardGrid');
-                        grid.innerHTML = `
+                        cardGrid.innerHTML = `
                             <div class="empty-state">
-                                <span class="big-icon">🌙</span>
+                                ${ICONS.moon.replace('<svg ', '<svg class="big-icon" ')}
                                 <h3>no poems or stories found</h3>
                                 <p class="hint">
                                     Place your .docx files in the <code>poems/</code> or <code>stories/</code> folders<br />
                                     in your GitHub repository.
                                 </p>
-                                <button onclick="location.reload()" style="
-                                    margin-top:1rem;
-                                    background:var(--bg-card);
-                                    border:1px solid var(--border);
-                                    color:var(--text-muted);
-                                    padding:0.4rem 1.2rem;
-                                    border-radius:30px;
-                                    cursor:pointer;
-                                    font-family:var(--font);
-                                ">retry</button>
+                                <button class="retry-btn" onclick="location.reload()">retry</button>
                             </div>
                         `;
                         itemCount.textContent = '0';
                     }
-
                 } catch (err) {
                     console.warn('GitHub load error:', err);
-                    const grid = document.getElementById('cardGrid');
-                    grid.innerHTML = `
+                    cardGrid.innerHTML = `
                         <div class="empty-state">
-                            <span class="big-icon">🕯️</span>
+                            ${ICONS.candle.replace('<svg ', '<svg class="big-icon" ')}
                             <h3>could not connect</h3>
                             <p class="hint">Make sure your repository is public and the paths are correct.</p>
-                            <button onclick="location.reload()" style="
-                                margin-top:1rem;
-                                background:var(--bg-card);
-                                border:1px solid var(--border);
-                                color:var(--text-muted);
-                                padding:0.4rem 1.2rem;
-                                border-radius:30px;
-                                cursor:pointer;
-                                font-family:var(--font);
-                            ">retry</button>
+                            <button class="retry-btn" onclick="location.reload()">retry</button>
                         </div>
                     `;
                     itemCount.textContent = '0';
@@ -941,33 +907,31 @@
                     if (raw) {
                         const parsed = JSON.parse(raw);
                         if (parsed.poems && parsed.poems.length > 0) {
-                            archive = {
-                                poems: parsed.poems || [],
-                                stories: parsed.stories || []
-                            };
-                            archive.poems = archive.poems.filter(p => p && p.id && p.content && p.content.trim().length >
-                            0);
-                            archive.stories = archive.stories.filter(p => p && p.id && p.content && p.content.trim()
-                                .length > 0);
+                            archive = { poems: parsed.poems || [], stories: parsed.stories || [] };
+                            archive.poems = sortNewestFirst(archive.poems.filter(p => p && p.id && p.content && p.content.trim().length > 0));
+                            archive.stories = sortNewestFirst(archive.stories.filter(p => p && p.id && p.content && p.content.trim().length > 0));
                             render();
                             return true;
                         }
                     }
-                } catch (_) { /* ignore */ }
+                } catch (_) {}
                 return false;
             }
 
+            // ─── Render ───
             function render() {
                 const items = archive[currentTab] || [];
-                const title = currentTab === 'poems' ? '📖 poems' : '📚 stories';
+                const iconSvg = currentTab === 'poems'
+                    ? '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 5.5C4 4.7 4.7 4 5.5 4H11V19H5.5C4.7 19 4 18.3 4 17.5V5.5Z" stroke="currentColor" stroke-width="1.3"/><path d="M20 5.5C20 4.7 19.3 4 18.5 4H13V19H18.5C19.3 19 20 18.3 20 17.5V5.5Z" stroke="currentColor" stroke-width="1.3"/></svg>'
+                    : '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 19.5V6C4 4.9 4.9 4 6 4H17C18.1 4 19 4.9 19 6V18" stroke="currentColor" stroke-width="1.3"/><path d="M6 20C4.9 20 4 19.1 4 18C4 16.9 4.9 16 6 16H19" stroke="currentColor" stroke-width="1.3"/></svg>';
 
-                gridTitle.textContent = title;
+                gridTitle.innerHTML = `${iconSvg} ${currentTab}`;
                 itemCount.textContent = items.length;
 
                 if (items.length === 0) {
                     cardGrid.innerHTML = `
                         <div class="empty-state">
-                            <span class="big-icon">🕯️</span>
+                            ${ICONS.candle.replace('<svg ', '<svg class="big-icon" ')}
                             <h3>no ${currentTab} yet</h3>
                             <p class="hint">place .docx files in the ${currentTab}/ folder</p>
                         </div>
@@ -976,26 +940,21 @@
                 }
 
                 let html = '';
-                const sorted = [...items].reverse();
-                for (const p of sorted) {
-                    const titleText = p.title || 'untitled';
-                    const date = p.date || '—';
+                for (const p of items) {
+                    const titleText = escapeHtml(p.title || 'untitled');
+                    const dateText = formatDate(p.createdDate);
                     const wordCount = p.content ? p.content.split(/\s+/).filter(w => w.length > 0).length : 0;
-                    const summaryText = p.summary || '✨ (no summary)';
-                    const summaryHtml = summaryText
-                        .replace(/&/g, '&amp;')
-                        .replace(/</g, '&lt;')
-                        .replace(/>/g, '&gt;');
+                    const summaryText = escapeHtml(p.summary || '(no summary)');
 
                     html += `
-                        <div class="card" data-id="${p.id}">
+                        <div class="card" data-id="${p.id}" tabindex="0" role="button">
                             <div class="title">${titleText}</div>
                             <div class="meta">
-                                <span>📅 ${date}</span>
-                                <span>📝 ${wordCount} words</span>
+                                <span>${ICONS.calendar} ${dateText}</span>
+                                <span>${ICONS.words} ${wordCount} words</span>
                             </div>
                             <div class="summary">
-                                <span class="badge">AI</span> ${summaryHtml}
+                                <span class="badge">glimpse</span>${summaryText}
                             </div>
                         </div>
                     `;
@@ -1003,35 +962,41 @@
                 cardGrid.innerHTML = html;
 
                 document.querySelectorAll('.card').forEach(card => {
-                    card.addEventListener('click', function() {
-                        const id = this.dataset.id;
-                        openModal(id);
+                    card.addEventListener('click', function() { openModal(this.dataset.id); });
+                    card.addEventListener('keydown', function(e) {
+                        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openModal(this.dataset.id); }
                     });
                 });
             }
 
+            function escapeHtml(str) {
+                return String(str)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;');
+            }
+
+            // ─── Modal ───
             function openModal(id) {
                 const items = archive[currentTab];
                 const item = items.find(p => p.id === id);
                 if (!item) return;
 
-                currentModalId = id;
-
-                const contentWithBlanks = item.content
-                    .replace(/\n\n/g, '\n\n')
-                    .replace(/&/g, '&amp;')
-                    .replace(/</g, '&lt;')
-                    .replace(/>/g, '&gt;')
-                    .replace(/\n/g, '<br />');
+                const wordCount = item.content ? item.content.split(/\s+/).filter(w => w.length > 0).length : 0;
 
                 modalTitle.textContent = item.title || 'untitled';
-                modalMeta.textContent =
-                    `📅 ${item.date} · 📝 ${item.content.split(/\s+/).filter(w => w.length > 0).length} words`;
-                modalBody.innerHTML = contentWithBlanks;
+                modalMeta.innerHTML = `
+                    <span>${ICONS.calendar} ${formatDate(item.createdDate)}</span>
+                    <span>${ICONS.words} ${wordCount} words</span>
+                `;
+
+                // Render the document's own formatting (bold/italic/underline/headings/line breaks),
+                // sanitized before insertion.
+                const clean = (window.DOMPurify ? DOMPurify.sanitize(item.html) : item.html);
+                modalBody.innerHTML = clean;
 
                 thankyouMessage.classList.remove('show');
                 thankyouMessage.textContent = '';
-                clearTimeout(typewriterTimer);
 
                 modalDownloadBtn.onclick = function(e) {
                     e.stopPropagation();
@@ -1039,18 +1004,7 @@
                         downloadDocx(item.fileData, item.title || 'untitled');
                         showThankYou();
                     } else {
-                        showToast('⚠️ file data not available', 'error');
-                    }
-                };
-
-                modalDeleteBtn.onclick = function(e) {
-                    e.stopPropagation();
-                    if (confirm(`Remove this ${currentTab.slice(0, -1)}?`)) {
-                        const items = archive[currentTab];
-                        archive[currentTab] = items.filter(p => p.id !== id);
-                        saveArchive();
-                        closeModal();
-                        showToast(`🗑️ removed from ${currentTab}`, '');
+                        showToast('file data not available', 'error');
                     }
                 };
 
@@ -1061,12 +1015,11 @@
             function closeModal() {
                 modal.classList.remove('show');
                 document.body.style.overflow = '';
-                currentModalId = null;
                 thankyouMessage.classList.remove('show');
                 thankyouMessage.textContent = '';
-                clearTimeout(typewriterTimer);
             }
 
+            let typewriterTimer = null;
             function showThankYou() {
                 const message = "Thank you for taking the time to view my mind <3";
                 thankyouMessage.textContent = '';
@@ -1084,14 +1037,11 @@
                         thankyouMessage.innerHTML += '<span class="cursor"></span>';
                     }
                 }
-
                 typeChar();
 
                 setTimeout(() => {
                     thankyouMessage.classList.remove('show');
-                    setTimeout(() => {
-                        thankyouMessage.textContent = '';
-                    }, 400);
+                    setTimeout(() => { thankyouMessage.textContent = ''; }, 400);
                 }, 8000);
             }
 
@@ -1100,9 +1050,7 @@
                 try {
                     const binary = atob(base64Data);
                     const array = new Uint8Array(binary.length);
-                    for (let i = 0; i < binary.length; i++) {
-                        array[i] = binary.charCodeAt(i);
-                    }
+                    for (let i = 0; i < binary.length; i++) array[i] = binary.charCodeAt(i);
                     const blob = new Blob([array], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
@@ -1113,16 +1061,9 @@
                     document.body.removeChild(a);
                     URL.revokeObjectURL(url);
                 } catch (e) {
-                    showToast('⚠️ could not download file', 'error');
+                    showToast('could not download file', 'error');
                     console.warn('download error', e);
                 }
-            }
-
-            function saveArchive() {
-                try {
-                    localStorage.setItem(STORAGE_KEY, JSON.stringify(archive));
-                } catch (_) { /* ignore */ }
-                render();
             }
 
             function showToast(msg, type) {
@@ -1134,47 +1075,34 @@
                     color: ${type === 'error' ? '#e0b0b0' : '#b0e0d0'};
                     font-size: 0.9rem; z-index: 2000;
                     opacity: 0; transition: opacity 0.4s ease;
-                    font-family: var(--font); max-width: 90%;
+                    font-family: var(--serif); max-width: 90%;
                 `;
                 toast.textContent = msg;
                 document.body.appendChild(toast);
-
-                requestAnimationFrame(() => {
-                    toast.style.opacity = '1';
-                });
-
-                setTimeout(() => {
-                    toast.style.opacity = '0';
-                    setTimeout(() => toast.remove(), 400);
-                }, 3000);
+                requestAnimationFrame(() => { toast.style.opacity = '1'; });
+                setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 400); }, 3000);
             }
 
+            // ─── Tabs ───
             tabs.forEach(tab => {
                 tab.addEventListener('click', function() {
-                    tabs.forEach(t => t.classList.remove('active'));
+                    tabs.forEach(t => { t.classList.remove('active'); t.setAttribute('aria-selected', 'false'); });
                     this.classList.add('active');
+                    this.setAttribute('aria-selected', 'true');
                     currentTab = this.dataset.tab;
                     render();
                 });
             });
 
             modalCloseBtn.addEventListener('click', closeModal);
-            modal.addEventListener('click', function(e) {
-                if (e.target === this) {
-                    closeModal();
-                }
-            });
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape') {
-                    closeModal();
-                }
-            });
+            modal.addEventListener('click', function(e) { if (e.target === this) closeModal(); });
+            document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeModal(); });
 
+            // ─── Ambient particles ───
             function initParticles() {
                 const canvas = document.getElementById('particles-canvas');
                 const ctx = canvas.getContext('2d');
-                let width, height;
-                let particles = [];
+                let width, height, particles = [];
 
                 function resize() {
                     width = window.innerWidth;
@@ -1182,67 +1110,48 @@
                     canvas.width = width;
                     canvas.height = height;
                 }
-
                 window.addEventListener('resize', resize);
                 resize();
 
-                const PARTICLE_COUNT = 80;
+                const PARTICLE_COUNT = 60;
                 for (let i = 0; i < PARTICLE_COUNT; i++) {
                     particles.push({
                         x: Math.random() * width,
                         y: Math.random() * height,
-                        radius: Math.random() * 1.8 + 0.5,
-                        speedX: (Math.random() - 0.5) * 0.25,
-                        speedY: (Math.random() - 0.5) * 0.15 - 0.05,
-                        opacity: Math.random() * 0.6 + 0.1,
+                        radius: Math.random() * 1.6 + 0.4,
+                        speedX: (Math.random() - 0.5) * 0.22,
+                        speedY: (Math.random() - 0.5) * 0.14 - 0.04,
+                        opacity: Math.random() * 0.55 + 0.1
                     });
                 }
 
-                function drawParticles() {
+                function draw() {
                     ctx.clearRect(0, 0, width, height);
-
                     for (const p of particles) {
-                        p.x += p.speedX;
-                        p.y += p.speedY;
-
-                        if (p.x < 0) p.x = width;
-                        if (p.x > width) p.x = 0;
-                        if (p.y < 0) p.y = height;
-                        if (p.y > height) p.y = 0;
-
+                        p.x += p.speedX; p.y += p.speedY;
+                        if (p.x < 0) p.x = width; if (p.x > width) p.x = 0;
+                        if (p.y < 0) p.y = height; if (p.y > height) p.y = 0;
                         const pulse = Math.sin(Date.now() * 0.001 + p.x * 0.01) * 0.15 + 0.5;
-                        const alpha = p.opacity * pulse * 0.8;
-
+                        const alpha = p.opacity * pulse * 0.75;
                         ctx.beginPath();
                         ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-                        ctx.fillStyle = `rgba(136, 204, 255, ${alpha})`;
-                        ctx.shadowColor = `rgba(136, 204, 255, ${alpha * 0.3})`;
-                        ctx.shadowBlur = 12;
+                        ctx.fillStyle = `rgba(159, 201, 232, ${alpha})`;
+                        ctx.shadowColor = `rgba(159, 201, 232, ${alpha * 0.3})`;
+                        ctx.shadowBlur = 10;
                         ctx.fill();
                     }
-
-                    requestAnimationFrame(drawParticles);
+                    requestAnimationFrame(draw);
                 }
-
-                drawParticles();
+                draw();
             }
 
+            // ─── Boot ───
             initParticles();
 
-            console.log('🌙 Afterlight ready · repo:', REPO_CONFIG);
-            console.log('To whoever finds this thank you for taking the time for reading.')
-
             const hasLocal = loadFromLocalStorage();
-            if (!hasLocal) {
-                loadFromGitHub();
-            } else {
-                loadFromGitHub();
-            }
+            loadFromGitHub(); // always refresh in the background
 
-            window.refreshArchive = function() {
-                loadFromGitHub();
-            };
-
+            window.refreshArchive = loadFromGitHub;
         })();
     </script>
 
