@@ -4,13 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Afterlight · archive</title>
-
-    <!-- mammoth.js for .docx parsing -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js">
     </script>
 
     <style>
-        /* ── Reset & Base ── */
         *,
         *::before,
         *::after {
@@ -292,6 +289,12 @@
             font-weight: 400;
             font-size: 1.1rem;
             color: var(--text);
+        }
+
+        .empty-state .hint {
+            font-size: 0.85rem;
+            opacity: 0.6;
+            margin-top: 0.4rem;
         }
 
         /* ── Modal (Pop-up) ── */
@@ -671,14 +674,10 @@
     <script>
         (function() {
             'use strict';
-
-            // ─── DOM refs ───
             const cardGrid = document.getElementById('cardGrid');
             const itemCount = document.getElementById('itemCount');
             const gridTitle = document.getElementById('gridTitle');
             const tabs = document.querySelectorAll('.tabs button');
-
-            // Modal refs
             const modal = document.getElementById('modal');
             const modalCloseBtn = document.getElementById('modalCloseBtn');
             const modalTitle = document.getElementById('modalTitle');
@@ -688,206 +687,20 @@
             const modalDeleteBtn = document.getElementById('modalDeleteBtn');
             const thankyouMessage = document.getElementById('thankyouMessage');
 
-            // ─── State ───
+
             const STORAGE_KEY = 'afterlight_archive';
             let archive = { poems: [], stories: [] };
             let currentTab = 'poems';
             let currentModalId = null;
-            let isLoading = false;
             let typewriterTimer = null;
 
-            // ─── Load from localStorage or GitHub ───
-            async function loadArchive() {
-                // First try localStorage
-                try {
-                    const raw = localStorage.getItem(STORAGE_KEY);
-                    if (raw) {
-                        const parsed = JSON.parse(raw);
-                        if (parsed.poems && parsed.poems.length > 0) {
-                            archive = {
-                                poems: parsed.poems || [],
-                                stories: parsed.stories || []
-                            };
-                            archive.poems = archive.poems.filter(p => p && p.id && p.content && p.content.trim().length >
-                            0);
-                            archive.stories = archive.stories.filter(p => p && p.id && p.content && p.content.trim()
-                                .length > 0);
-                            render();
-                            return;
-                        }
-                    }
-                } catch (_) { /* ignore */ }
 
-                // If localStorage is empty, try loading from GitHub
-                await loadFromGitHub();
-            }
+            const REPO_CONFIG = {
+                owner: 'joshyxtc-byte',
+                repo: 'Afterlight',
+                branch: 'main'
+            };
 
-            // ─── Load from GitHub API ───
-            async function loadFromGitHub() {
-                const grid = document.getElementById('cardGrid');
-                grid.innerHTML = `
-                    <div class="loading-state">
-                        <span class="spinner">🌀</span>
-                        <p style="margin-top:0.6rem;opacity:0.5;">listening to the dark...</p>
-                    </div>
-                `;
-
-                try {
-                    // Detect repo from the page URL (for GitHub Pages)
-                    let owner = 'your-username';
-                    let repo = 'your-repo';
-                    let branch = 'main';
-
-                    // Try to detect from the page URL
-                    const urlParts = window.location.hostname.split('.');
-                    if (urlParts.includes('github') || window.location.hostname.includes('github.io')) {
-                        // For GitHub Pages: username.github.io/repo-name
-                        const pathParts = window.location.pathname.split('/').filter(p => p.length > 0);
-                        if (pathParts.length > 0) {
-                            repo = pathParts[0];
-                            // Owner is the username part of the domain
-                            if (window.location.hostname.includes('github.io')) {
-                                owner = window.location.hostname.split('.')[0];
-                            }
-                        }
-                    }
-
-                    // Try to get repo info from the current page if it's a GitHub raw URL
-                    // Fallback: let the user configure via a global or query param
-                    // Check for a meta tag or global config
-                    const configEl = document.querySelector('meta[name="repo-config"]');
-                    if (configEl) {
-                        const config = JSON.parse(configEl.getAttribute('content'));
-                        owner = config.owner || owner;
-                        repo = config.repo || repo;
-                        branch = config.branch || branch;
-                    }
-
-                    // Also check for a global variable
-                    if (window.AFTERLIGHT_REPO) {
-                        owner = window.AFTERLIGHT_REPO.owner || owner;
-                        repo = window.AFTERLIGHT_REPO.repo || repo;
-                        branch = window.AFTERLIGHT_REPO.branch || branch;
-                    }
-
-                    // Try to fetch from GitHub API
-                    const apiUrl =
-                        `https://api.github.com/repos/${owner}/${repo}/contents/poems?ref=${branch}`;
-                    const response = await fetch(apiUrl, {
-                        headers: {
-                            'Accept': 'application/vnd.github.v3+json'
-                        }
-                    });
-
-                    if (!response.ok) {
-                        throw new Error(`GitHub API error: ${response.status}`);
-                    }
-
-                    const files = await response.json();
-
-                    // Filter for .docx files
-                    const docxFiles = files.filter(f =>
-                        f.name.toLowerCase().endsWith('.docx') &&
-                        f.type === 'file'
-                    );
-
-                    if (docxFiles.length === 0) {
-                        throw new Error('No .docx files found in poems/ folder');
-                    }
-
-                    // Fetch and parse each .docx file
-                    const poems = [];
-                    for (const file of docxFiles) {
-                        try {
-                            const docxResponse = await fetch(file.download_url);
-                            const arrayBuffer = await docxResponse.arrayBuffer();
-
-                            // Parse with mammoth
-                            const result = await mammoth.convertToHtml({ arrayBuffer });
-                            const plainText = htmlToPlainTextWithStructure(result.value);
-
-                            const lines = plainText.split('\n').filter(l => l.trim().length > 0);
-                            let title = lines.length > 0 ? lines[0].trim() : file.name.replace(/\.docx$/i, '');
-                            if (title.length > 80) title = title.slice(0, 80) + '…';
-
-                            const summary = generateSummary(plainText);
-
-                            // Get the raw file content for download
-                            const fileData = await fetch(file.download_url);
-                            const blob = await fileData.blob();
-                            const base64 = await blobToBase64(blob);
-
-                            poems.push({
-                                id: uid(),
-                                title: title,
-                                content: plainText,
-                                summary: summary,
-                                date: new Date().toISOString().slice(0, 10),
-                                fileName: file.name,
-                                fileData: base64,
-                            });
-                        } catch (err) {
-                            console.warn('Error parsing file:', file.name, err);
-                        }
-                    }
-
-                    // Separate into poems and stories based on folder or tags
-                    // For now, put all in poems
-                    archive = {
-                        poems: poems,
-                        stories: []
-                    };
-
-                    // Save to localStorage for offline use
-                    try {
-                        localStorage.setItem(STORAGE_KEY, JSON.stringify(archive));
-                    } catch (_) { /* ignore */ }
-
-                    render();
-
-                } catch (err) {
-                    console.warn('GitHub load error:', err);
-                    // Show empty state with option to retry
-                    const grid = document.getElementById('cardGrid');
-                    grid.innerHTML = `
-                        <div class="empty-state">
-                            <span class="big-icon">🌙</span>
-                            <h3>no poems found</h3>
-                            <p style="font-size:0.85rem;opacity:0.6;margin-top:0.4rem;">
-                                Place your .docx files in the <code>poems/</code> folder<br />
-                                or upload them manually.
-                            </p>
-                            <button onclick="location.reload()" style="
-                                margin-top:1rem;
-                                background:var(--bg-card);
-                                border:1px solid var(--border);
-                                color:var(--text-muted);
-                                padding:0.4rem 1.2rem;
-                                border-radius:30px;
-                                cursor:pointer;
-                                font-family:var(--font);
-                            ">retry</button>
-                        </div>
-                    `;
-                    itemCount.textContent = '0';
-                }
-            }
-
-            // ─── Blob to base64 ───
-            function blobToBase64(blob) {
-                return new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        const dataUrl = e.target.result;
-                        const base64 = dataUrl.split(',')[1];
-                        resolve(base64);
-                    };
-                    reader.onerror = reject;
-                    reader.readAsDataURL(blob);
-                });
-            }
-
-            // ─── Helper: htmlToPlainTextWithStructure ───
             function htmlToPlainTextWithStructure(html) {
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(html, 'text/html');
@@ -922,12 +735,10 @@
                 }
 
                 let fullText = extract(body);
-                // Preserve double line breaks for stanzas
                 fullText = fullText.replace(/\n{3,}/g, '\n\n');
                 return fullText.trim();
             }
 
-            // ─── Simple AI summarizer ───
             function generateSummary(text) {
                 if (!text || text.length < 20) return text || '';
 
@@ -975,12 +786,184 @@
                 return selected.map(s => s.sentence).join(' ');
             }
 
-            // ─── uid ───
             function uid() {
                 return Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 6);
             }
 
-            // ─── Render ───
+            function blobToBase64(blob) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const dataUrl = e.target.result;
+                        const base64 = dataUrl.split(',')[1];
+                        resolve(base64);
+                    };
+                    reader.onerror = reject;
+                    reader.readAsDataURL(blob);
+                });
+            }
+
+            async function fetchAndParseFolder(folderName) {
+                const url =
+                    `https://api.github.com/repos/${REPO_CONFIG.owner}/${REPO_CONFIG.repo}/contents/${folderName}?ref=${REPO_CONFIG.branch}`;
+
+                try {
+                    const response = await fetch(url, {
+                        headers: { 'Accept': 'application/vnd.github.v3+json' }
+                    });
+
+                    if (!response.ok) {
+                        if (response.status === 404) {
+                            console.warn(`Folder '${folderName}' not found in repo.`);
+                            return [];
+                        }
+                        throw new Error(`GitHub API error: ${response.status}`);
+                    }
+
+                    const files = await response.json();
+                    const docxFiles = files.filter(f =>
+                        f.name.toLowerCase().endsWith('.docx') &&
+                        f.type === 'file'
+                    );
+
+                    if (docxFiles.length === 0) {
+                        console.warn(`No .docx files found in '${folderName}' folder.`);
+                        return [];
+                    }
+
+                    const items = [];
+                    for (const file of docxFiles) {
+                        try {
+                            const docxResponse = await fetch(file.download_url);
+                            const arrayBuffer = await docxResponse.arrayBuffer();
+
+                            const result = await mammoth.convertToHtml({ arrayBuffer });
+                            const plainText = htmlToPlainTextWithStructure(result.value);
+
+                            const lines = plainText.split('\n').filter(l => l.trim().length > 0);
+                            let title = lines.length > 0 ? lines[0].trim() : file.name.replace(/\.docx$/i, '');
+                            if (title.length > 80) title = title.slice(0, 80) + '…';
+
+                            const summary = generateSummary(plainText);
+                            const fileData = await fetch(file.download_url);
+                            const blob = await fileData.blob();
+                            const base64 = await blobToBase64(blob);
+
+                            items.push({
+                                id: uid(),
+                                title: title,
+                                content: plainText,
+                                summary: summary,
+                                date: new Date().toISOString().slice(0, 10),
+                                fileName: file.name,
+                                fileData: base64,
+                            });
+                        } catch (err) {
+                            console.warn(`Error parsing file ${file.name} in ${folderName}:`, err);
+                        }
+                    }
+                    return items;
+                } catch (err) {
+                    console.warn(`Error fetching folder '${folderName}':`, err);
+                    return [];
+                }
+            }
+
+            async function loadFromGitHub() {
+                const grid = document.getElementById('cardGrid');
+                grid.innerHTML = `
+                    <div class="loading-state">
+                        <span class="spinner">🌀</span>
+                        <p style="margin-top:0.6rem;opacity:0.5;">listening to the dark...</p>
+                    </div>
+                `;
+
+                try {
+                    const [poems, stories] = await Promise.all([
+                        fetchAndParseFolder('poems'),
+                        fetchAndParseFolder('stories')
+                    ]);
+
+                    archive.poems = poems;
+                    archive.stories = stories;
+
+                    try {
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(archive));
+                    } catch (_) { /* ignore */ }
+
+                    render();
+
+                    if (poems.length === 0 && stories.length === 0) {
+                        const grid = document.getElementById('cardGrid');
+                        grid.innerHTML = `
+                            <div class="empty-state">
+                                <span class="big-icon">🌙</span>
+                                <h3>no poems or stories found</h3>
+                                <p class="hint">
+                                    Place your .docx files in the <code>poems/</code> or <code>stories/</code> folders<br />
+                                    in your GitHub repository.
+                                </p>
+                                <button onclick="location.reload()" style="
+                                    margin-top:1rem;
+                                    background:var(--bg-card);
+                                    border:1px solid var(--border);
+                                    color:var(--text-muted);
+                                    padding:0.4rem 1.2rem;
+                                    border-radius:30px;
+                                    cursor:pointer;
+                                    font-family:var(--font);
+                                ">retry</button>
+                            </div>
+                        `;
+                        itemCount.textContent = '0';
+                    }
+
+                } catch (err) {
+                    console.warn('GitHub load error:', err);
+                    const grid = document.getElementById('cardGrid');
+                    grid.innerHTML = `
+                        <div class="empty-state">
+                            <span class="big-icon">🕯️</span>
+                            <h3>could not connect</h3>
+                            <p class="hint">Make sure your repository is public and the paths are correct.</p>
+                            <button onclick="location.reload()" style="
+                                margin-top:1rem;
+                                background:var(--bg-card);
+                                border:1px solid var(--border);
+                                color:var(--text-muted);
+                                padding:0.4rem 1.2rem;
+                                border-radius:30px;
+                                cursor:pointer;
+                                font-family:var(--font);
+                            ">retry</button>
+                        </div>
+                    `;
+                    itemCount.textContent = '0';
+                }
+            }
+
+            function loadFromLocalStorage() {
+                try {
+                    const raw = localStorage.getItem(STORAGE_KEY);
+                    if (raw) {
+                        const parsed = JSON.parse(raw);
+                        if (parsed.poems && parsed.poems.length > 0) {
+                            archive = {
+                                poems: parsed.poems || [],
+                                stories: parsed.stories || []
+                            };
+                            archive.poems = archive.poems.filter(p => p && p.id && p.content && p.content.trim().length >
+                            0);
+                            archive.stories = archive.stories.filter(p => p && p.id && p.content && p.content.trim()
+                                .length > 0);
+                            render();
+                            return true;
+                        }
+                    }
+                } catch (_) { /* ignore */ }
+                return false;
+            }
+
             function render() {
                 const items = archive[currentTab] || [];
                 const title = currentTab === 'poems' ? '📖 poems' : '📚 stories';
@@ -993,7 +976,7 @@
                         <div class="empty-state">
                             <span class="big-icon">🕯️</span>
                             <h3>no ${currentTab} yet</h3>
-                            <p style="font-size:0.85rem;opacity:0.6;">place .docx files in the poems/ folder</p>
+                            <p class="hint">place .docx files in the ${currentTab}/ folder</p>
                         </div>
                     `;
                     return;
@@ -1026,7 +1009,6 @@
                 }
                 cardGrid.innerHTML = html;
 
-                // Attach click listeners to cards
                 document.querySelectorAll('.card').forEach(card => {
                     card.addEventListener('click', function() {
                         const id = this.dataset.id;
@@ -1035,7 +1017,6 @@
                 });
             }
 
-            // ─── Modal Functions ───
             function openModal(id) {
                 const items = archive[currentTab];
                 const item = items.find(p => p.id === id);
@@ -1043,9 +1024,8 @@
 
                 currentModalId = id;
 
-                // Preserve blank lines in the content
                 const contentWithBlanks = item.content
-                    .replace(/\n\n/g, '\n\n') // Keep double newlines
+                    .replace(/\n\n/g, '\n\n')
                     .replace(/&/g, '&amp;')
                     .replace(/</g, '&lt;')
                     .replace(/>/g, '&gt;')
@@ -1056,12 +1036,10 @@
                     `📅 ${item.date} · 📝 ${item.content.split(/\s+/).filter(w => w.length > 0).length} words`;
                 modalBody.innerHTML = contentWithBlanks;
 
-                // Hide thank you message initially
                 thankyouMessage.classList.remove('show');
                 thankyouMessage.textContent = '';
                 clearTimeout(typewriterTimer);
 
-                // Set download handler with typewriter thank you
                 modalDownloadBtn.onclick = function(e) {
                     e.stopPropagation();
                     if (item.fileData) {
@@ -1072,7 +1050,6 @@
                     }
                 };
 
-                // Set delete handler
                 modalDeleteBtn.onclick = function(e) {
                     e.stopPropagation();
                     if (confirm(`Remove this ${currentTab.slice(0, -1)}?`)) {
@@ -1097,7 +1074,6 @@
                 clearTimeout(typewriterTimer);
             }
 
-            // ─── Typewriter Thank You ───
             function showThankYou() {
                 const message = "Thank you for taking the time to view my mind <3";
                 thankyouMessage.textContent = '';
@@ -1112,14 +1088,12 @@
                         index++;
                         typewriterTimer = setTimeout(typeChar, 30 + Math.random() * 40);
                     } else {
-                        // Add cursor blink
                         thankyouMessage.innerHTML += '<span class="cursor"></span>';
                     }
                 }
 
                 typeChar();
 
-                // Auto-hide after 8 seconds
                 setTimeout(() => {
                     thankyouMessage.classList.remove('show');
                     setTimeout(() => {
@@ -1128,7 +1102,6 @@
                 }, 8000);
             }
 
-            // ─── Download .docx from base64 ───
             function downloadDocx(base64Data, filename) {
                 if (!base64Data) return;
                 try {
@@ -1152,7 +1125,6 @@
                 }
             }
 
-            // ─── Save archive ───
             function saveArchive() {
                 try {
                     localStorage.setItem(STORAGE_KEY, JSON.stringify(archive));
@@ -1160,9 +1132,7 @@
                 render();
             }
 
-            // ─── Toast ───
             function showToast(msg, type) {
-                // Simple inline toast - we'll use a temporary one
                 const toast = document.createElement('div');
                 toast.style.cssText = `
                     position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%);
@@ -1186,7 +1156,6 @@
                 }, 3000);
             }
 
-            // ─── Tab switching ───
             tabs.forEach(tab => {
                 tab.addEventListener('click', function() {
                     tabs.forEach(t => t.classList.remove('active'));
@@ -1196,7 +1165,6 @@
                 });
             });
 
-            // ─── Modal close events ───
             modalCloseBtn.addEventListener('click', closeModal);
             modal.addEventListener('click', function(e) {
                 if (e.target === this) {
@@ -1209,7 +1177,6 @@
                 }
             });
 
-            // ─── Particle Animation ───
             function initParticles() {
                 const canvas = document.getElementById('particles-canvas');
                 const ctx = canvas.getContext('2d');
@@ -1267,36 +1234,20 @@
                 drawParticles();
             }
 
-            // ─── Boot ───
             initParticles();
 
-            // Set up repo config - user can override this
-            window.AFTERLIGHT_REPO = {
-                owner: 'joshyxtc-byte', // CHANGE THIS
-                repo: 'Afterlight', // CHANGE THIS
-                branch: 'main'
-            };
+            console.log('🌙 Afterlight ready · repo:', REPO_CONFIG);
+            console.log('To whoever finds this thank you for taking the time for reading.')
 
-            // Try to auto-detect from the page URL
-            try {
-                const urlParts = window.location.hostname.split('.');
-                if (urlParts.includes('github.io')) {
-                    const owner = urlParts[0];
-                    const pathParts = window.location.pathname.split('/').filter(p => p.length > 0);
-                    if (pathParts.length > 0) {
-                        window.AFTERLIGHT_REPO.owner = owner;
-                        window.AFTERLIGHT_REPO.repo = pathParts[0];
-                    }
-                }
-            } catch (_) { /* ignore */ }
+            const hasLocal = loadFromLocalStorage();
+            if (!hasLocal) {
+                loadFromGitHub();
+            } else {
+                loadFromGitHub();
+            }
 
-            console.log('🌙 Afterlight ready · repo:', window.AFTERLIGHT_REPO);
-
-            loadArchive();
-
-            // Also expose a refresh function
-            window.refreshPoems = function() {
-                loadArchive();
+            window.refreshArchive = function() {
+                loadFromGitHub();
             };
 
         })();
