@@ -613,12 +613,10 @@
 </head>
 <body>
 
-    <!-- ─── Particle Canvas ─── -->
     <canvas id="particles-canvas"></canvas>
 
     <div class="container">
 
-        <!-- ─── HEADER ─── -->
         <header>
             <h1>Afterlight</h1>
             <div class="tagline">
@@ -626,13 +624,11 @@
             </div>
         </header>
 
-        <!-- ─── TABS ─── -->
         <div class="tabs">
             <button class="active" data-tab="poems">Poems</button>
             <button data-tab="stories">Stories</button>
         </div>
 
-        <!-- ─── GRID ─── -->
         <div class="grid-header">
             <h2 id="gridTitle">📖 poems</h2>
             <span class="count" id="itemCount">0</span>
@@ -645,18 +641,16 @@
             </div>
         </div>
 
-        <!-- ─── FOOTER ─── -->
         <div class="footer">
-            <div>A collection of thoughts, experiences, and quiet devastation.</div>
-            <div class="signature">~ J C.</div>
+            <div>A collection of thoughts, experiences and quiet devastation.</div>
+            <div class="signature">~ J C.s</div>
             <div style="margin-top:0.2rem;opacity:0.4;font-size:0.7rem;">
-                <span class="spiral">🌀</span> afterlight
+                afterlight
             </div>
         </div>
 
     </div>
 
-    <!-- ─── MODAL ─── -->
     <div id="modal" class="modal">
         <div class="modal-content">
             <button class="close-btn" id="modalCloseBtn">✕</button>
@@ -785,7 +779,7 @@
                 }
                 return selected.map(s => s.sentence).join(' ');
             }
-
+            
             function uid() {
                 return Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 6);
             }
@@ -874,7 +868,7 @@
                 grid.innerHTML = `
                     <div class="loading-state">
                         <span class="spinner">🌀</span>
-                        <p style="margin-top:0.6rem;opacity:0.5;">listening to the dark...</p>
+                        <p style="margin-top:0.6rem;opacity:0.5;">Gathering my thoughts...</p>
                     </div>
                 `;
 
